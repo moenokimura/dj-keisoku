@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>dJ 計測</title>
+<meta name="theme-color" content="#0F1E3A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="dJ計測">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="keisoku-180.png">
+<link rel="icon" href="keisoku-192.png">
+<style>
+:root{--bg:#F1F3F6;--s:#fff;--sunk:#E7EAEF;--ink:#14181D;--mu:#5E6773;--line:#D6DBE1;--ac:#1D4ED8;--ac2:#E2E9FB;--ng:#C93030;--nav:#0F1E3A;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;color:var(--ink);background:var(--bg);-webkit-text-size-adjust:100%}
+@media(prefers-color-scheme:dark){:root{--bg:#0E1114;--s:#181C21;--sunk:#22272E;--ink:#E7EBEF;--mu:#98A2AD;--line:#2D333A;--ac:#7FA0FF;--ac2:#1F2A45;--ng:#F06464}}
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px)}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+input,select{background:var(--s);border:1px solid var(--line);border-radius:8px;height:42px;padding:0 10px;font-size:16px;width:100%;min-width:0}
+.top{background:var(--nav);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+.top h1{font-size:16px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.top .ib{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+.top .who{font-size:12px;opacity:.8;background:none;border:0;color:#fff;padding:4px}
+.w{max-width:720px;margin:0 auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.ib{border:1px solid var(--line);background:var(--s);border-radius:8px;height:34px;padding:0 10px;font-size:14px;white-space:nowrap}
+.pr{background:var(--ac);color:#fff;border:0;border-radius:10px;min-height:46px;padding:0 16px;font-weight:700;font-size:15px}
+.gh{background:var(--s);border:1px solid var(--line);border-radius:10px;min-height:44px;padding:0 14px;font-size:14px}
+.dg{background:transparent;border:1px solid var(--ng);color:var(--ng);border-radius:10px;min-height:44px;padding:0 14px}
+.pn{background:var(--s);border:1px solid var(--line);border-radius:14px;padding:14px}
+.pn h2{font-size:14px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.hint{font-size:12px;color:var(--mu);margin:0;line-height:1.6}.empty{color:var(--mu);text-align:center;padding:16px 0;margin:0}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.f label{font-size:11px;font-weight:700;color:var(--mu)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:420px){.two{grid-template-columns:1fr}}
+.row{display:flex;gap:6px;margin-bottom:8px;align-items:center}.row .lab{flex:0 0 46px;text-align:center;font-weight:700}.row select{flex:0 0 auto;width:auto}
+.foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.card{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--s);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card b{display:block}.card small{color:var(--mu);font-size:12px}.card .n{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.tabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--s);border-radius:999px;height:36px;padding:0 14px;font-size:13px;font-weight:700}
+.tabs button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cond{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 8px;align-items:center;font-size:12px;font-weight:700;color:var(--mu)}
+.cond input{height:38px;text-align:center}.tm{display:flex;gap:4px}.tm .ib{height:38px;flex:0 0 auto}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.chip{display:grid;grid-template-columns:auto 1fr;gap:0 8px;text-align:left;background:var(--s);border:2px solid var(--line);border-radius:12px;padding:8px 10px;min-height:58px;align-items:center}
+.chip b{grid-row:1/3;font-size:22px;width:30px;text-align:center}.chip span{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chip small{font-size:11px;color:var(--mu)}
+.chip.on{border-color:var(--ac);background:var(--ac2)}
+.pick{text-align:center;color:var(--mu);font-weight:700;padding:16px 0;margin:0}
+.ent{background:var(--s);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.now{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--mu);font-weight:700}.now b{color:var(--ac);font-size:15px;white-space:nowrap}
+.disp{font-size:50px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;background:var(--sunk);border-radius:12px;padding:4px 14px;line-height:1.25}.disp.ph{color:var(--line)}.disp small{font-size:16px;color:var(--mu);margin-left:6px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.keys button{height:60px;font-size:27px;font-weight:700;border:1px solid var(--line);background:var(--bg);border-radius:12px;touch-action:manipulation}
+.keys button:active{background:var(--ac2)}
+.acts{display:flex;gap:8px}.go{flex:1;font-size:21px;height:62px;border-radius:14px}.go:disabled{opacity:.35}
+.st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.st div{background:var(--sunk);border-radius:10px;padding:8px}.st span{display:block;font-size:10px;color:var(--mu);font-weight:700}.st b{font-size:18px;font-variant-numeric:tabular-nums}
+.ps{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.ps button{border:1px solid var(--line);background:var(--s);border-radius:8px;padding:4px 2px;display:flex;flex-direction:column;align-items:center}.ps small{font-size:10px;color:var(--mu)}.ps b{font-size:15px;font-variant-numeric:tabular-nums}
+.ps button.on{border-color:var(--ac);background:var(--ac2)}
+.tb{overflow-x:auto}.tb table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:13px}
+.tb th,.tb td{border-bottom:1px solid var(--line);padding:6px 4px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tb thead th{text-align:center;vertical-align:bottom;white-space:normal}.tb thead th:first-child{width:56px}
+.tb thead small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:10px;color:var(--mu);font-weight:400;word-break:break-all;line-height:1.25}
+.tb tbody th{text-align:left;font-size:11px;color:var(--mu)}.tb .me{background:var(--ac2)}.tb .sr td{font-weight:700}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#14181D;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:20;max-width:90vw}
+.share{background:var(--ac2);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.share code{font-size:12px;word-break:break-all;background:var(--s);padding:8px;border-radius:8px}
+.line{background:#06C755;color:#fff;border:0;border-radius:10px;min-height:46px;font-weight:700;font-size:15px}
+.err{background:#FDECEC;color:#8A1F1F;border-radius:12px;padding:12px;font-size:13px;line-height:1.6}
+textarea{width:100%;min-height:200px;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--s)}
+</style>
+</head>
+<body>
+<div id="app"><div class="w"><p class="empty">読み込み中…</p></div></div>
+<div id="toast" class="toast" hidden></div>
+<script src="config.js"></script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,doc,setDoc,updateDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app=initializeApp(window.KEISOKU_CONFIG);
+const fs=getFirestore(app);
+const UNITS=["m","秒","km/h","点",""];
+const DOW="日月火水木金土";
+const S={room:null,data:null,unsub:null,err:null,view:"list",sid:null,mi:0,ti:null,buf:"",edit:null,setup:null,grid:false,name:ls("kk.name")||""};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+const h=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const todayS=()=>{const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())};
+const md=s=>{if(!s)return"";const[a,b,c]=s.split("-").map(Number);const d=new Date(a,b-1,c);return (b)+"/"+c+"("+DOW[d.getDay()]+")"};
+const rid=(p,n=5)=>{const a="abcdefghijkmnpqrstuvwxyz23456789";let s=p;const r=crypto.getRandomValues(new Uint8Array(n));for(const x of r)s+=a[x%a.length];return s};
+function toast(t){const el=document.getElementById("toast");el.textContent=t;el.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>el.hidden=true,2200)}
+function recent(){try{return JSON.parse(ls("kk.recent")||"[]")}catch(e){return[]}}
+function saveRecent(id,d){let r=recent().filter(x=>x.id!==id);r.unshift({id,title:d.title||"",venue:d.venue||"",day:d.day||"",at:Date.now()});ls("kk.recent",JSON.stringify(r.slice(0,30)))}
+const roomUrl=id=>location.origin+location.pathname+"#"+id;
+
+/* ---------- data helpers ---------- */
+function sessions(){const s=(S.data&&S.data.s)||{};return Object.entries(s).filter(([k,v])=>v&&v.tires).map(([id,v])=>({id,...v})).sort((a,b)=>(a.day||"").localeCompare(b.day||"")||(a.createdAt||"").localeCompare(b.createdAt||""))}
+function ses(id){const v=S.data&&S.data.s&&S.data.s[id];return v&&v.tires?{id,...v}:null}
+const key=(m,t)=>m.id+"__"+t.id;
+function full(r,m,t){const o=(r.v||{})[key(m,t)]||{};const a=[];for(const[k,v]of Object.entries(o)){const n=+k.slice(1);if(v==="x")a[n-1]="x";else if(v!==null&&v!==""&&isFinite(+v))a[n-1]=+v}return a}
+function vals(r,m,t){const o=(r.v||{})[key(m,t)]||{};const a=[];for(const[k,v]of Object.entries(o)){const n=+k.slice(1);if(v!==null&&v!==""&&isFinite(+v))a[n-1]=+v}return a}
+function maxPass(r,m){let n=0;(r.tires||[]).forEach(t=>n=Math.max(n,full(r,m,t).length));return n}
+function stats(a){const x=a.filter(v=>v!==undefined);const n=x.length;if(!n)return{n:0,trim:null,f7:0};
+  const avg=x.reduce((s,v)=>s+v,0)/n;const sd=n>1?Math.sqrt(x.reduce((s,v)=>s+(v-avg)**2,0)/(n-1)):null;
+  const f7=[];for(let i=0;i<7;i++)if(a[i]!==undefined)f7.push(a[i]);
+  const trim=f7.length===7?(f7.reduce((s,v)=>s+v,0)-Math.max(...f7)-Math.min(...f7))/5:null;return{n,avg,sd,trim,f7:f7.length}}
+const plab=(r,p,short)=>{const n=+r.ppl||0,l=+r.laps||1;if(!n)return short?"P"+p:"Pass "+p;const who=Math.ceil(p/l),lap=(p-1)%l+1;return short?`${who}-${lap}`:`${who}人目 ${lap}周目`};
+const rf=(v,d=2)=>v===null||v===undefined||!isFinite(v)?"—":(+v).toFixed(d);
+function applyLocal(upd){for(const[k,v]of Object.entries(upd)){const ks=k.split(".");let c=S.data;for(let i=0;i<ks.length-1;i++){if(!c[ks[i]]||typeof c[ks[i]]!=="object")c[ks[i]]={};c=c[ks[i]]}c[ks[ks.length-1]]=v}}
+function upd(u){const full={...u,updatedAt:new Date().toISOString()};applyLocal(full);render();
+  return updateDoc(doc(fs,"keisoku",S.room),full).then(()=>true).catch(e=>{console.warn(e);toast(e&&e.code==="permission-denied"?"保存できません(Firebaseのルール設定がまだかも)":"保存できませんでした。電波を確認してね");return false})}
+
+/* ---------- room ---------- */
+function openRoom(id){
+  if(S.unsub)S.unsub();S.room=id;S.data=null;S.err=null;S.view="room";S.sid=ls("kk.sid."+id)||null;S.ti=null;S.buf="";S.edit=null;S.setup=null;render();
+  S.unsub=onSnapshot(doc(fs,"keisoku",id),snap=>{
+    if(!snap.exists()){S.err="nf";render();return}
+    S.data=snap.data();saveRecent(id,S.data);
+    if(S.view==="room"&&!S.setup){const ss=sessions();if(!S.sid||!ses(S.sid))S.sid=ss.length?ss[ss.length-1].id:null}
+    render();
+  },e=>{console.warn(e);S.err=e&&e.code==="permission-denied"?"perm":"net";render()});
+}
+async function createRoom(d){
+  const id=rid("",12);const body={title:d.title.trim(),venue:d.venue.trim(),day:d.day,s:{},createdAt:new Date().toISOString(),createdBy:S.name||"",updatedAt:new Date().toISOString()};
+  try{await setDoc(doc(fs,"keisoku",id),body)}catch(e){console.warn(e);toast(e&&e.code==="permission-denied"?"作れませんでした(Firebaseのルール設定がまだかも)":"作れませんでした。電波を確認してね");return}
+  saveRecent(id,body);location.hash=id;S.justMade=true;
+}
+function defaultSession(){
+  const ss=sessions();const prev=ss[ss.length-1];
+  const ms=prev?prev.ms.map(m=>({...m})):[{id:rid("m"),name:"20-0km",unit:"m"}];
+  const tires=prev?prev.tires.map(t=>({...t})):["A","B","C","D"].map((l,i)=>({id:rid("t"),lab:l,name:"",role:i?"比較":"基準"}));
+  const d0=(S.data&&S.data.day)||todayS();
+  return{ppl:prev?prev.ppl??12:12,laps:prev?prev.laps??2:2,day:prev?prev.day:d0,title:"",car:prev?prev.car||"":"",size:prev?prev.size||"":"",air:prev?prev.air||"":"",note:"",ms,tires};
+}
+
+/* ---------- render ---------- */
+function render(){
+  const a=document.activeElement;
+  if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)&&!S.force){S.defer=true;return}
+  S.force=false;
+  const y=window.scrollY;document.getElementById("app").innerHTML=view();window.scrollTo(0,y);
+}
+function top(title,left="",right=""){return `<header class="top">${left}<h1>${title}</h1>${right}<button class="who" data-a="name">${h(S.name||"名前未設定")}</button></header>`}
+function view(){
+  if(!S.name)return top("dJ 計測")+`<div class="w"><section class="pn"><h2>はじめに名前を入れてね</h2><p class="hint" style="margin-bottom:10px">誰がどのタイヤを入れたか、みんなの画面に出るよ。</p><div class="f"><input id="nm" placeholder="例: もえの" autocomplete="nickname"></div><button class="pr" style="width:100%" data-a="setName">OK</button></section></div>`;
+  if(S.view==="list")return listView();
+  if(S.err==="nf")return top("dJ 計測",`<button class="ib" data-a="home">‹</button>`)+`<div class="w"><p class="err">この記録は見つかりませんでした。URLが途中で切れていないか確認してね。</p></div>`;
+  if(S.err)return top("dJ 計測",`<button class="ib" data-a="home">‹</button>`)+`<div class="w"><p class="err">${S.err==="perm"?"読み込めませんでした。Firebaseのルール設定(計測用)がまだ入っていないかも。":"読み込めませんでした。電波を確認して、もう一度開いてね。"}</p><button class="gh" data-a="reload">もう一度読み込む</button></div>`;
+  if(!S.data)return top("dJ 計測",`<button class="ib" data-a="home">‹</button>`)+`<div class="w"><p class="empty">読み込み中…</p></div>`;
+  if(S.setup)return setupView();
+  return roomView();
+}
+function listView(){
+  const r=recent();
+  const mk=S.mk||{title:"",venue:"",day:todayS()};
+  return top("dJ 計測")+`<div class="w">
+  <p class="hint">記録をつくって、URLをLINEで送ると、受け取った人もその場で一緒に入力できるよ。アカウントはいらない。</p>
+  ${S.making?`<section class="pn"><h2>新しい記録</h2>
+    <div class="f"><label>名前(試乗会・テストの名前)</label><input data-k="title" value="${h(mk.title)}" placeholder="例: 北海道 9月 ブリヂストン"></div>
+    <div class="two"><div class="f"><label>会場</label><input data-k="venue" value="${h(mk.venue)}" placeholder="例: 邦和アイスリンク"></div><div class="f"><label>開始日</label><input type="date" data-k="day" value="${h(mk.day)}"></div></div>
+    <div class="foot"><button class="gh" data-a="cancelMake">やめる</button><button class="pr" data-a="make">つくる</button></div></section>`
+  :`<button class="pr" data-a="startMake">＋ 新しい記録をつくる</button>`}
+  <h2 style="font-size:13px;color:var(--mu);margin:8px 0 0">最近ひらいた記録</h2>
+  ${r.length?r.map(x=>`<button class="card" data-a="open" data-id="${h(x.id)}"><span><b>${h(x.title||"(名前なし)")}</b><small>${h([x.venue,md(x.day)].filter(Boolean).join(" ・ "))}</small></span><span class="n">›</span></button>`).join(""):`<p class="empty">まだありません。LINEで届いたURLを開くとここに出るよ</p>`}
+  </div>`;
+}
+function setupView(){
+  const d=S.setup.d,isNew=!S.setup.id;
+  const f=(k,l,ph="",type="text")=>`<div class="f"><label>${l}</label><input type="${type}" data-s="${k}" value="${h(d[k]||"")}" placeholder="${ph}"></div>`;
+  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
+  const mr=d.ms.map((m,i)=>`<div class="row"><input data-s="ms.${i}.name" value="${h(m.name)}" placeholder="例: 20-0km / ACC / LAP TIME" aria-label="測定項目"><select data-s="ms.${i}.unit" aria-label="単位">${UNITS.map(o=>`<option value="${o}" ${m.unit===o?"selected":""}>${o||"単位なし"}</option>`).join("")}</select>${d.ms.length>1?`<button class="ib" data-a="mDel" data-i="${i}" aria-label="消す">✕</button>`:""}</div>`).join("");
+  return top(isNew?"シートを追加":"シートの設定",`<button class="ib" data-a="setupCancel">‹</button>`)+`<div class="w">
+  <section class="pn"><div class="two">${f("day","日付","","date")}${f("title","シート名","例: AM 参加者試乗")}</div>
+  <div class="two">${f("car","車両","例: TOYOTA COROLLA Touring-AWD HB")}${f("size","タイヤサイズ","例: 205/55R16")}</div>
+  <div class="two">${f("air","空気圧","例: 250/240kPa")}${f("note","メモ","例: テスト車両4台使用")}</div>
+  <div class="two">${f("ppl","参加者の人数","例: 12","number")}${f("laps","1人の周回数","例: 2","number")}</div><p class="hint">参加者試乗なら人数と周回数を入れると「3人目 2周目」みたいに進む。DEMOやテストで回数だけ数えるなら人数を空にしてね。</p></section>
+  <section class="pn"><h2>タイヤ</h2><p class="hint" style="margin-bottom:8px">記号・タイヤ名・基準/比較。この順で表になるよ。</p>${tr}<button class="gh" data-a="tAdd">＋ タイヤを追加</button></section>
+  <section class="pn"><h2>測定項目</h2><p class="hint" style="margin-bottom:8px">制動だけならこのままでOK。ACCやラップも測るなら追加してね。</p>${mr}<button class="gh" data-a="mAdd">＋ 測定項目を追加</button></section>
+  <div class="foot">${!isNew?`<button class="dg" data-a="sesDel">このシートを削除</button>`:""}<button class="pr" data-a="setupSave">${isNew?"追加して入力をはじめる":"保存"}</button></div></div>`;
+}
+function matome(ss){if(ss.length<1)return"";
+  const blocks=ss.map(r=>{const m=(r.ms||[])[0];if(!m)return"";return `<div style="margin-bottom:12px"><b style="font-size:13px">${h(md(r.day))} ${h(r.title||"")}</b><div class="tb"><table><tbody>${(r.tires||[]).map(t=>{const st=stats(vals(r,m,t));return `<tr><th style="width:auto;font-size:12px;color:var(--ink)">${h(t.lab||"")} ${h(t.name||"")}</th><td style="width:70px;font-weight:700">${rf(st.avg)}</td><td style="width:56px;color:var(--mu);font-size:11px">${st.n}回</td></tr>`}).join("")}</tbody></table></div></div>`}).join("");
+  return `<section class="pn"><h2><span>まとめ(タイヤごとの平均)</span></h2>${blocks}</section>`}
+function roomView(){
+  const D=S.data,ss=sessions();
+  const share=S.justMade||!ss.length?`<div class="share"><b style="font-size:14px">このURLを入力する人に送ってね</b><code>${h(roomUrl(S.room))}</code><div class="two"><button class="line" data-a="line">LINEで送る</button><button class="gh" data-a="copyUrl">URLをコピー</button></div></div>`:"";
+  const head=top(h(D.title||"計測"),`<button class="ib" data-a="home">‹</button>`,`<button class="ib" data-a="shareOpen" aria-label="共有">共有</button>`);
+  if(!ss.length)return head+`<div class="w">${share}<p class="hint">${h([D.venue,md(D.day)].filter(Boolean).join(" ・ "))}</p><section class="pn"><h2>まずシートをつくる</h2><p class="hint" style="margin-bottom:10px">Excelのシート1枚分(例: 0827 AM 参加者試乗)。タイヤの銘柄と測定項目を入れるよ。</p><button class="pr" style="width:100%" data-a="sesNew">＋ シートを追加</button></section></div>`;
+  const r=ses(S.sid)||ss[ss.length-1];S.sid=r.id;
+  const ms=r.ms||[],tires=r.tires||[];if(S.mi>=ms.length)S.mi=0;const m=ms[S.mi];
+  if(!S.ti||!tires.some(t=>t.id===S.ti)){const sv=ls("kk.t."+r.id);S.ti=tires.some(t=>t.id===sv)?sv:null}
+  const t=tires.find(x=>x.id===S.ti);const unit=m&&m.unit||"";const c=r.cond||{};
+  const sTabs=`<div class="tabs" role="group" aria-label="シート">${ss.map(x=>`<button data-a="ses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}<button data-a="sesNew" aria-pressed="false">＋</button></div>`;
+  const ci=(k,ph)=>`<input data-c="${k}" inputmode="text" value="${h(c[k]??"")}" placeholder="${ph}" aria-label="${ph}">`;
+  const mTabs=ms.length>1?`<div class="tabs" role="group" aria-label="測定項目">${ms.map((x,i)=>`<button data-a="m" data-i="${i}" aria-pressed="${i===S.mi}">${h(x.name||"測定"+(i+1))}</button>`).join("")}</div>`:"";
+  const chips=tires.map(x=>{const n=m?vals(r,m,x).filter(v=>v!==undefined).length:0;const who=(r.w||{})[m?key(m,x):""]||"";
+    return `<button class="chip ${x.id===S.ti?"on":""}" data-a="t" data-id="${x.id}"><b>${h(x.lab||"?")}</b><span>${h(x.name||"未入力")}</span><small>${n}回${who?" ・ "+h(who):""}</small></button>`}).join("");
+  let ent="";
+  if(!t)ent=`<p class="pick">↑ 自分が入力するタイヤを選んでね</p>`;
+  else{const a=full(r,m,t);let nx=1;while(a[nx-1]!==undefined)nx++;const p=S.edit||nx;
+    ent=`<div class="ent"><div class="now"><span>${h(t.lab||"")} ${h(t.name||"")}${ms.length>1?" ・ "+h(m.name):""}</span><b>${plab(r,p)}${S.edit?" を直す":""}</b></div>
+    <div class="disp ${S.buf?"":"ph"}" aria-live="polite">${S.buf?h(S.buf):"0.00"}<small>${h(unit)}</small></div>
+    <div class="keys">${["7","8","9","4","5","6","1","2","3",".","0","⌫"].map(k=>`<button data-a="k" data-k="${k}" aria-label="${k==="⌫"?"1文字消す":k}">${k}</button>`).join("")}</div>
+    <div class="acts">${S.edit?`<button class="gh" data-a="editCancel">やめる</button><button class="dg" data-a="passDel">消す</button>`:""}<button class="gh" data-a="miss" style="min-height:62px;flex:0 0 auto;font-size:13px;line-height:1.3">計測<br>できず</button><button class="pr go" data-a="go" ${S.buf&&isFinite(+S.buf)?"":"disabled"}>${S.edit?"直す":"記録"}</button></div></div>`}
+  let mine="";
+  if(t&&m){const a=full(r,m,t),st=stats(vals(r,m,t));const done=a.filter(v=>v!==undefined).length,miss=a.filter(v=>v==="x").length;
+    mine=`<section class="pn"><h2><span>${h(t.lab||"")} の記録</span><small class="hint">タップで直せる</small></h2>
+    <div class="st"><div><span>平均</span><b>${rf(st.avg)}</b></div><div><span>標準偏差</span><b>${rf(st.sd,3)}</b></div>${r.ppl?`<div><span>入力済み${miss?` (×${miss})`:""}</span><b>${done}/${r.ppl*(r.laps||1)}</b></div>`:`<div><span>5本平均</span><b>${st.trim!==null?rf(st.trim):st.f7<7?`あと${7-st.f7}回`:"—"}</b></div>`}</div>
+    <div class="ps">${a.map((v,i)=>v===undefined?"":`<button class="${S.edit===i+1?"on":""}" data-a="edit" data-p="${i+1}"><small>${plab(r,i+1,1)}</small><b style="${v==="x"?"color:var(--ng)":""}">${v==="x"?"×":rf(v)}</b></button>`).join("")||`<p class="empty" style="grid-column:1/-1;padding:4px">まだありません</p>`}</div></section>`}
+  let sum="";
+  if(m){const sts=tires.map(x=>stats(vals(r,m,x)));const mp=maxPass(r,m);
+    const hd=`<tr><th></th>${tires.map(x=>`<th class="${x.id===S.ti?"me":""}"><b>${h(x.lab||"")}</b><small>${h(x.name||"")}</small></th>`).join("")}</tr>`;
+    const rows=[["平均",s=>rf(s.avg)],["SD",s=>rf(s.sd,3)],...(r.ppl?[]:[["5本平均",s=>s.trim!==null?rf(s.trim):"—"]]),["回数",s=>s.n||"0"]].map(([l,fn])=>`<tr class="sr"><th>${l}</th>${sts.map((s,i)=>`<td class="${tires[i].id===S.ti?"me":""}">${fn(s)}</td>`).join("")}</tr>`).join("");
+    let g="";if(S.grid){const vs=tires.map(x=>full(r,m,x));for(let p=1;p<=mp;p++)g+=`<tr><th>${plab(r,p,1)}</th>${vs.map((a,i)=>`<td class="${tires[i].id===S.ti?"me":""}">${a[p-1]==="x"?"×":a[p-1]!==undefined?rf(a[p-1]):""}</td>`).join("")}</tr>`}
+    sum=`<section class="pn"><h2><span>全体${unit?`(${h(unit)})`:""}</span><button class="ib" data-a="grid">${S.grid?"たたむ":"全部見る"}</button></h2><div class="tb"><table><thead>${hd}</thead><tbody>${rows}${g}</tbody></table></div>
+    ${r.ppl?"":`<p class="hint" style="margin-top:8px">5本平均＝Pass1〜7のうち一番大きい値と小さい値を除いた平均</p>`}</section>`}
+  const info=[r.car,r.size,r.air&&"空気圧 "+r.air,r.note].filter(Boolean).map(h).join(" ・ ");
+  return head+`<div class="w">${S.showShare?share||`<div class="share"><b style="font-size:14px">このURLを入力する人に送ってね</b><code>${h(roomUrl(S.room))}</code><div class="two"><button class="line" data-a="line">LINEで送る</button><button class="gh" data-a="copyUrl">URLをコピー</button></div></div>`:share}
+  ${sTabs}
+  <div style="display:flex;gap:8px;align-items:center"><p class="hint" style="flex:1">${h(D.venue||"")}${info?" ・ "+info:""}</p><button class="ib" data-a="sesEdit">設定</button></div>
+  <section class="pn"><div class="cond"><span></span><span style="text-align:center">START</span><span style="text-align:center">FINISH</span>
+    <span>氷温</span>${ci("ice1","℃")}${ci("ice2","℃")}<span>外気温</span>${ci("air1","℃")}${ci("air2","℃")}
+    <span>時刻</span><span class="tm">${ci("t1","9:20")}<button class="ib" data-a="nowT" data-k="t1">今</button></span><span class="tm">${ci("t2","11:20")}<button class="ib" data-a="nowT" data-k="t2">今</button></span></div></section>
+  ${mTabs}<div class="chips">${chips}</div>${ent}${mine}${sum}${matome(ss)}
+  <div class="foot"><button class="gh" data-a="tsv">数字をコピー</button><button class="pr" data-a="xlsx">Excelで書き出す(全シート)</button></div>
+  ${S.tsv?`<section class="pn"><h2>コピーできなかったので、長押しでコピーしてね<button class="ib" data-a="tsvClose">閉じる</button></h2><textarea readonly>${h(S.tsv)}</textarea></section>`:""}
+  </div>`;
+}
+
+/* ---------- xlsx (no library) ---------- */
+const CT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CT[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zip(files){const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  for(const[name,str]of files){const nb=enc.encode(name),db=enc.encode(str),crc=crc32(db);
+    const l=new DataView(new ArrayBuffer(30));l.setUint32(0,0x04034b50,true);l.setUint16(4,20,true);l.setUint16(6,0x0800,true);l.setUint32(14,crc,true);l.setUint32(18,db.length,true);l.setUint32(22,db.length,true);l.setUint16(26,nb.length,true);parts.push(new Uint8Array(l.buffer),nb,db);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint32(16,crc,true);c.setUint32(20,db.length,true);c.setUint32(24,db.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);cen.push(new Uint8Array(c.buffer),nb);off+=30+nb.length+db.length}
+  const cs=cen.reduce((s,x)=>s+x.length,0);const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
+const colL=n=>{let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
+const xe=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,"");
+function sheetXml(r){
+  const cells={};const put=(ro,co,v,s,f)=>{if((v===undefined||v===null||v==="")&&!f)return;cells[ro+","+co]={v,s,f}};
+  const tires=r.tires||[],ms=r.ms||[],c=r.cond||{},N=tires.length,W=Math.max(7,N);const dd=(r.day||"").split("-").map(Number);
+  // 1行目: 日付・会場 / 条件
+  put(1,0,dd.length===3?`${dd[0]},${dd[1]},${dd[2]}`:r.day,1);put(1,1,S.data.venue||"",1);
+  put(2,0,"dropJapan");put(2,2,"Tire Name",1);
+  tires.forEach((t,i)=>{put(3+i,1,t.role||"",7);put(3+i,2,[t.lab,t.name].filter(Boolean).join(" "),6)});
+  const carR=3+W,hdr=carR+1,avR=hdr+1,sdR=hdr+2,trR=hdr+3,p1=hdr+4,PN=r.ppl?Math.max(r.ppl*(r.laps||1),...ms.map(m=>maxPass(r,m))):100;
+  put(carR,0,[r.car,r.size].filter(Boolean).join("\n"),3);if(r.air)put(hdr,0,"Air "+r.air);if(r.note)put(avR,0,"*"+r.note);
+  const cc=3+W+1;
+  const num=v=>{if(v===""||v==null)return v;const x=String(v).replace(",",".").replace("−","-");return isFinite(+x)?+x:v};
+  const tm=v=>{const m=/^(\d{1,2}):(\d{2})$/.exec(String(v||"").trim());return m?(+m[1]*60+ +m[2])/1440:v};
+  ["START","FINISH","START","FINISH"].forEach((x,i)=>put(1,cc+1+i,x,12));
+  put(2,cc,"氷温",12);put(2,cc+1,num(c.ice1),12);put(2,cc+2,num(c.ice2),12);put(2,cc+3,tm(c.t1),11);put(2,cc+4,tm(c.t2),11);
+  put(3,cc,"外気温",12);put(3,cc+1,num(c.air1),12);put(3,cc+2,num(c.air2),12);
+  let lc=2,c0=3;
+  ms.forEach((m,mi)=>{
+    const u=m.unit==="m"?"m":m.unit==="秒"?"sec":m.unit;
+    put(mi===0?carR:hdr,lc,m.name||"",1);
+    put(avR,lc,mi===0?`Avg.(${u||""})`:`Avg(${u||""})`,mi===0?1:0);put(sdR,lc,"Stdev");if(!r.ppl)put(trR,lc,"Avg.");
+    for(let p=1;p<=PN;p++)put(p1+p-1,lc,r.ppl?plab(r,p):"Pass"+p);
+    tires.forEach((t,i)=>{const col=c0+i,L=colL(col),a=vals(r,m,t),st=stats(a);
+      if(mi===0)put(hdr,col,(t.role?t.role+": ":"")+[t.lab,t.name].filter(Boolean).join(" "),8,`IF(${colL(1)}${3+i}="",${colL(2)}${3+i},${colL(1)}${3+i}&": "&${colL(2)}${3+i})`);
+      else put(hdr,col,[t.lab,t.name].filter(Boolean).join(" "),8);
+      const rg=`${L}${p1}:${L}${p1+PN-1}`,r7=`${L}${p1}:${L}${p1+6}`;
+      put(avR,col,st.n?+st.avg.toFixed(6):"",9,`IFERROR(AVERAGE(${rg}),"")`);
+      put(sdR,col,st.sd!=null?+st.sd.toFixed(6):"",10,`IFERROR(STDEV(${rg}),"")`);
+      if(!r.ppl)put(trR,col,st.trim!=null?+st.trim.toFixed(6):"",9,`IF(COUNT(${r7})=7,(SUM(${r7})-MAX(${r7})-MIN(${r7}))/5,"")`);
+      full(r,m,t).forEach((v,pi)=>{if(v!==undefined)put(p1+pi,col,v==="x"?"×":v,5)})});
+    lc=c0+W+(mi===0?1:1);c0=lc+1;
+  });
+  const rows={};for(const k of Object.keys(cells)){const[ro,co]=k.split(",").map(Number);(rows[ro]=rows[ro]||[]).push(co)}
+  let sd="";for(const ro of Object.keys(rows).map(Number).sort((a,b)=>a-b)){const ht=ro===carR?` ht="124" customHeight="1"`:ro===hdr?` ht="42.5" customHeight="1"`:"";sd+=`<row r="${ro}"${ht}>`;for(const co of rows[ro].sort((a,b)=>a-b)){const x=cells[ro+","+co],ref=colL(co)+ro,st=x.s?` s="${x.s}"`:"";
+    if(x.f){const isN=typeof x.v==="number";sd+=`<c r="${ref}"${st}${isN?"":` t="str"`}><f>${xe(x.f)}</f><v>${isN?x.v:xe(x.v||"")}</v></c>`}
+    else if(typeof x.v==="number")sd+=`<c r="${ref}"${st}><v>${x.v}</v></c>`;else sd+=`<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${xe(x.v)}</t></is></c>`}sd+=`</row>`}
+  let cols=`<col min="1" max="1" width="17" customWidth="1"/><col min="2" max="2" width="8.7" customWidth="1"/><col min="3" max="3" width="24.9" customWidth="1"/><col min="4" max="${3+W}" width="25.6" customWidth="1"/><col min="${4+W}" max="${4+W}" width="4.8" customWidth="1"/><col min="${5+W}" max="${5+W}" width="16.6" customWidth="1"/><col min="${6+W}" max="60" width="16.6" customWidth="1"/>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane xSplit="3" ySplit="${trR}" topLeftCell="D${trR+1}" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${sd}</sheetData></worksheet>`;
+}
+function sumXml(ss,names){let ro=1;let sd=`<row r="1"><c r="A1" s="1" t="inlineStr"><is><t>タイヤごとの平均</t></is></c></row>`;ro=3;
+  const str=(ref,v,st)=>`<c r="${ref}"${st?` s="${st}"`:""} t="inlineStr"><is><t xml:space="preserve">${xe(v)}</t></is></c>`;
+  ss.forEach((r,k)=>{const m=(r.ms||[])[0];if(!m)return;const W=Math.max(7,(r.tires||[]).length);const avR=3+W+2;const q="'"+names[k].replace(/'/g,"''")+"'";
+    sd+=`<row r="${ro}">${str("A"+ro,names[k],1)}</row>`;ro++;
+    sd+=`<row r="${ro}">${str("A"+ro,"タイヤ",12)}${str("B"+ro,"平均",12)}${str("C"+ro,"回数",12)}</row>`;ro++;
+    (r.tires||[]).forEach((t,i)=>{const L=colL(3+i);const st=stats(vals(r,m,t));
+      sd+=`<row r="${ro}">${str("A"+ro,[t.lab,t.name].filter(Boolean).join(" "))}<c r="B${ro}" s="9"><f>${xe(`IFERROR(${q}!${L}${avR}*1,"")`)}</f>${st.n?`<v>${st.avg}</v>`:""}</c><c r="C${ro}" s="5"><f>${xe(`COUNT(${q}!${L}${avR+3}:${L}${avR+500})`)}</f><v>${st.n}</v></c></row>`;ro++});
+    ro++});
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="34" customWidth="1"/><col min="2" max="3" width="12" customWidth="1"/></cols><sheetData>${sd}</sheetData></worksheet>`}
+function xlsxBlob(){
+  const ss=sessions();const used=new Set();
+  const names=ss.map(r=>{let n=((r.day||"").replace(/-/g,"")+(r.title||"")).replace(/[\\\/\?\*\[\]:]/g," ").slice(0,28)||"Sheet";let x=n,i=2;while(used.has(x))x=n.slice(0,26)+"_"+i++;used.add(x);return x});
+  const files=[["[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${[...ss,0].map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ["_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${[...names,"まとめ"].map((n,i)=>`<sheet name="${xe(n)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`],
+    ["xl/_rels/workbook.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${[...ss,0].map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}<Relationship Id="rId${ss.length+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/styles.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="0.000"/><numFmt numFmtId="165" formatCode="0.0"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Meiryo UI"/></font><font><b/><sz val="11"/><name val="Meiryo UI"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFCCFFFF"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="13"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/><xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment wrapText="1" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="165" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="20" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`]];
+  ss.forEach((r,i)=>files.push([`xl/worksheets/sheet${i+1}.xml`,sheetXml(r)]));files.push([`xl/worksheets/sheet${ss.length+1}.xml`,sumXml(ss,names)]);
+  return zip(files);
+}
+async function exportX(){
+  if(!sessions().length){toast("シートがまだありません");return}
+  const blob=xlsxBlob();const name=`計測_${(S.data.title||"記録").replace(/[\\\/:*?"<>|\s]+/g,"")}.xlsx`;
+  try{const file=new File([blob],name,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return}}catch(e){if(e&&e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
+}
+window.__kk={S,xlsxBlob,sessions};
+
+/* ---------- events ---------- */
+function readSetup(){if(!S.setup)return;document.querySelectorAll("[data-s]").forEach(el=>{const ks=el.dataset.s.split(".");let o=S.setup.d;for(let i=0;i<ks.length-1;i++)o=o[ks[i]];o[ks[ks.length-1]]=el.value})}
+document.addEventListener("input",e=>{const el=e.target;if(el.dataset.s)readSetup();if(el.dataset.k){S.mk=S.mk||{title:"",venue:"",day:todayS()};S.mk[el.dataset.k]=el.value}});
+document.addEventListener("change",e=>{const el=e.target;if(el.dataset.c&&S.sid)upd({[`s.${S.sid}.cond.${el.dataset.c}`]:el.value.trim()})});
+document.addEventListener("focusout",()=>{if(S.defer)setTimeout(()=>{const a=document.activeElement;if(!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))){S.defer=false;render()}},60)});
+const rr=()=>{S.force=true;render()};
+document.addEventListener("click",async ev=>{
+  const b=ev.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
+  if(a==="setName"){const v=(document.getElementById("nm").value||"").trim();if(!v){toast("名前を入れてね");return}S.name=v;ls("kk.name",v);rr();return}
+  if(a==="name"){const v=prompt("名前",S.name||"");if(v&&v.trim()){S.name=v.trim();ls("kk.name",S.name);rr()}return}
+  if(a==="home"){location.hash="";return}
+  if(a==="reload"){openRoom(S.room);return}
+  if(a==="startMake"){S.making=true;S.mk={title:"",venue:"",day:todayS()};rr();return}
+  if(a==="cancelMake"){S.making=false;rr();return}
+  if(a==="make"){const d=S.mk||{};if(!(d.title||"").trim()){toast("名前を入れてね");return}S.making=false;await createRoom({title:d.title,venue:d.venue||"",day:d.day||todayS()});return}
+  if(a==="open"){location.hash=b.dataset.id;return}
+  if(a==="line"){const t=`${S.data.title||"計測"}の入力はここから\n${roomUrl(S.room)}`;location.href="https://line.me/R/msg/text/?"+encodeURIComponent(t);return}
+  if(a==="copyUrl"){try{await navigator.clipboard.writeText(roomUrl(S.room));toast("URLをコピーしました")}catch(e){prompt("長押しでコピーしてね",roomUrl(S.room))}return}
+  if(a==="shareOpen"){S.showShare=!S.showShare;S.justMade=false;rr();return}
+  if(a==="ses"){S.sid=b.dataset.id;ls("kk.sid."+S.room,S.sid);S.ti=null;S.mi=0;S.buf="";S.edit=null;S.justMade=false;rr();return}
+  if(a==="sesNew"){S.setup={id:null,d:defaultSession()};rr();window.scrollTo(0,0);return}
+  if(a==="sesEdit"){const r=ses(S.sid);if(!r)return;S.setup={id:r.id,d:JSON.parse(JSON.stringify({ppl:r.ppl??"",laps:r.laps??"",day:r.day||"",title:r.title||"",car:r.car||"",size:r.size||"",air:r.air||"",note:r.note||"",ms:r.ms||[],tires:r.tires||[]}))};rr();window.scrollTo(0,0);return}
+  if(a==="setupCancel"){S.setup=null;rr();return}
+  if(a==="tAdd"){readSetup();const used=S.setup.d.tires.map(t=>t.lab);let l="A";for(let i=0;i<26;i++){l=String.fromCharCode(65+i);if(!used.includes(l))break}S.setup.d.tires.push({id:rid("t"),lab:l,name:"",role:"比較"});rr();return}
+  if(a==="tDel"){readSetup();S.setup.d.tires.splice(+b.dataset.i,1);rr();return}
+  if(a==="mAdd"){readSetup();S.setup.d.ms.push({id:rid("m"),name:"",unit:"秒"});rr();return}
+  if(a==="mDel"){readSetup();S.setup.d.ms.splice(+b.dataset.i,1);rr();return}
+  if(a==="setupSave"){readSetup();const d=S.setup.d;d.tires=d.tires.filter(t=>(t.lab||"").trim()||(t.name||"").trim());d.ms=d.ms.filter(m=>(m.name||"").trim()||m.unit);
+    if(!d.day){toast("日付を入れてね");return}if(!d.tires.length){toast("タイヤを1本以上入れてね");return}if(!d.ms.length)d.ms=[{id:rid("m"),name:"20-0km",unit:"m"}];
+    const body={ppl:Math.max(0,parseInt(d.ppl)||0),laps:Math.max(1,parseInt(d.laps)||1),day:d.day,title:d.title.trim(),car:d.car.trim(),size:d.size.trim(),air:d.air.trim(),note:d.note.trim(),tires:d.tires.map(t=>({id:t.id,lab:t.lab.trim(),name:t.name.trim(),role:t.role||""})),ms:d.ms.map(m=>({id:m.id,name:m.name.trim(),unit:m.unit||""}))};
+    const sid=S.setup.id;
+    if(sid){const u={};for(const[k,v]of Object.entries(body))u[`s.${sid}.${k}`]=v;S.setup=null;S.force=true;await upd(u);toast("保存しました");return}
+    const nid=rid("s");S.setup=null;S.sid=nid;ls("kk.sid."+S.room,nid);S.ti=null;S.mi=0;S.justMade=false;S.force=true;
+    await upd({[`s.${nid}`]:{...body,v:{},w:{},cond:{},createdAt:new Date().toISOString(),createdBy:S.name}});window.scrollTo(0,0);toast("入力するタイヤを選んでね");return}
+  if(a==="sesDel"){const sid=S.setup&&S.setup.id;if(!sid)return;if(!confirm("このシートを削除しますか？入力した数字も消えます"))return;S.setup=null;S.sid=null;S.force=true;await upd({[`s.${sid}`]:null});toast("削除しました");return}
+  if(a==="m"){S.mi=+b.dataset.i;S.buf="";S.edit=null;rr();return}
+  if(a==="t"){S.ti=b.dataset.id;S.buf="";S.edit=null;ls("kk.t."+S.sid,S.ti);rr();return}
+  if(a==="k"){const k=b.dataset.k;if(k==="⌫")S.buf=S.buf.slice(0,-1);else if(k==="."){if(!S.buf.includes("."))S.buf=(S.buf||"0")+"."}else if(S.buf.replace(".","").length<6)S.buf=(S.buf==="0"?"":S.buf)+k;rr();return}
+  if(a==="go"){const r=ses(S.sid);if(!r)return;const m=r.ms[S.mi],t=r.tires.find(x=>x.id===S.ti);if(!m||!t||!S.buf||!isFinite(+S.buf))return;
+    const arr=full(r,m,t);let p=S.edit;if(!p){p=1;while(arr[p-1]!==undefined)p++}const v=Math.round(+S.buf*1000)/1000;const was=S.edit;S.buf="";S.edit=null;S.force=true;
+    upd({[`s.${r.id}.v.${key(m,t)}.p${p}`]:v,[`s.${r.id}.w.${key(m,t)}`]:S.name});toast(`${t.lab||""} ${plab(r,p)} ${v}${m.unit||""} ${was?"直したよ":"記録"}`);return}
+  if(a==="edit"){const r=ses(S.sid);const m=r.ms[S.mi],t=r.tires.find(x=>x.id===S.ti);const p=+b.dataset.p;const arr=full(r,m,t);S.edit=p;S.buf=arr[p-1]!==undefined&&arr[p-1]!=="x"?String(arr[p-1]):"";rr();const e=document.querySelector(".ent");e&&e.scrollIntoView({behavior:"smooth",block:"center"});return}
+  if(a==="miss"){const r=ses(S.sid);if(!r)return;const m=r.ms[S.mi],t=r.tires.find(x=>x.id===S.ti);if(!m||!t)return;
+    const arr=full(r,m,t);let p=S.edit;if(!p){p=1;while(arr[p-1]!==undefined)p++}S.buf="";S.edit=null;S.force=true;
+    upd({[`s.${r.id}.v.${key(m,t)}.p${p}`]:"x",[`s.${r.id}.w.${key(m,t)}`]:S.name});toast(`${t.lab||""} ${plab(r,p)} 計測できず(平均に入れない)`);return}
+  if(a==="editCancel"){S.edit=null;S.buf="";rr();return}
+  if(a==="passDel"){const r=ses(S.sid);const m=r.ms[S.mi],t=r.tires.find(x=>x.id===S.ti);const p=S.edit;S.edit=null;S.buf="";S.force=true;upd({[`s.${r.id}.v.${key(m,t)}.p${p}`]:null});toast(`${plab(r,p)}を消しました`);return}
+  if(a==="grid"){S.grid=!S.grid;rr();return}
+  if(a==="nowT"){const d=new Date();S.force=true;upd({[`s.${S.sid}.cond.${b.dataset.k}`]:d.getHours()+":"+pad(d.getMinutes())});return}
+  if(a==="xlsx"){exportX();return}
+  if(a==="tsv"){const r=ses(S.sid);const m=r.ms[S.mi];const ts=r.tires;const vs=ts.map(t=>full(r,m,t));const n=maxPass(r,m);
+    const L=[ts.map(t=>[t.lab,t.name].filter(Boolean).join(": ")).join("\t")];for(let p=0;p<n;p++)L.push(vs.map(x=>x[p]==="x"?"×":x[p]!==undefined?x[p]:"").join("\t"));const txt=L.join("\n");
+    try{await navigator.clipboard.writeText(txt);toast("コピーしました。ExcelのPass1の欄に貼ってね")}catch(e){S.tsv=txt;rr()}return}
+  if(a==="tsvClose"){S.tsv=null;rr();return}
+});
+function route(){const id=(location.hash||"").slice(1);if(id&&/^[a-z0-9]{8,20}$/.test(id)){if(id!==S.room)openRoom(id)}else{if(S.unsub)S.unsub();S.unsub=null;S.room=null;S.data=null;S.view="list";rr()}}
+window.addEventListener("hashchange",route);route();
+</script>
+</body>
+</html>
