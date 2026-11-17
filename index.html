@@ -104,6 +104,8 @@ function stats(a){const x=a.filter(v=>v!==undefined);const n=x.length;if(!n)retu
   const f7=[];for(let i=0;i<7;i++)if(a[i]!==undefined)f7.push(a[i]);
   const trim=f7.length===7?(f7.reduce((s,v)=>s+v,0)-Math.max(...f7)-Math.min(...f7))/5:null;return{n,avg,sd,trim,f7:f7.length}}
 const plab=(r,p,short)=>{const n=+r.ppl||0,l=+r.laps||1;if(!n)return short?"P"+p:"Pass "+p;const who=Math.ceil(p/l),lap=(p-1)%l+1;return short?`${who}-${lap}`:`${who}人目 ${lap}周目`};
+const COLS=[["y","黄","#F2E21B","#111"],["r","赤","#E8343A","#fff"],["b","青","#2A9BE0","#fff"],["g","緑","#2FB35A","#fff"],["o","オレンジ","#F28C1B","#111"],["p","紫","#8A4FD8","#fff"],["k","グレー","#9AA3AD","#111"]];
+const tcol=(t,i)=>COLS.find(c=>c[0]===t.col)||COLS[i%COLS.length];
 const rf=(v,d=2)=>v===null||v===undefined||!isFinite(v)?"—":(+v).toFixed(d);
 function applyLocal(upd){for(const[k,v]of Object.entries(upd)){const ks=k.split(".");let c=S.data;for(let i=0;i<ks.length-1;i++){if(!c[ks[i]]||typeof c[ks[i]]!=="object")c[ks[i]]={};c=c[ks[i]]}c[ks[ks.length-1]]=v}}
 function upd(u){const full={...u,updatedAt:new Date().toISOString()};applyLocal(full);render();
@@ -147,6 +149,7 @@ function view(){
   if(S.err)return top("dJ 計測",`<button class="ib" data-a="home">‹</button>`)+`<div class="w"><p class="err">${S.err==="perm"?"読み込めませんでした。Firebaseのルール設定(計測用)がまだ入っていないかも。":"読み込めませんでした。電波を確認して、もう一度開いてね。"}</p><button class="gh" data-a="reload">もう一度読み込む</button></div>`;
   if(!S.data)return top("dJ 計測",`<button class="ib" data-a="home">‹</button>`)+`<div class="w"><p class="empty">読み込み中…</p></div>`;
   if(S.setup)return setupView();
+  if(S.graph)return graphView();
   return roomView();
 }
 function listView(){
@@ -166,7 +169,7 @@ function listView(){
 function setupView(){
   const d=S.setup.d,isNew=!S.setup.id;
   const f=(k,l,ph="",type="text")=>`<div class="f"><label>${l}</label><input type="${type}" data-s="${k}" value="${h(d[k]||"")}" placeholder="${ph}"></div>`;
-  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
+  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><select data-s="tires.${i}.col" aria-label="グラフの色" style="width:auto">${COLS.map((c,k)=>`<option value="${c[0]}" ${(t.col||COLS[i%COLS.length][0])===c[0]?"selected":""}>${c[1]}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
   const mr=d.ms.map((m,i)=>`<div class="row"><input data-s="ms.${i}.name" value="${h(m.name)}" placeholder="例: 20-0km / ACC / LAP TIME" aria-label="測定項目"><select data-s="ms.${i}.unit" aria-label="単位">${UNITS.map(o=>`<option value="${o}" ${m.unit===o?"selected":""}>${o||"単位なし"}</option>`).join("")}</select>${d.ms.length>1?`<button class="ib" data-a="mDel" data-i="${i}" aria-label="消す">✕</button>`:""}</div>`).join("");
   return top(isNew?"シートを追加":"シートの設定",`<button class="ib" data-a="setupCancel">‹</button>`)+`<div class="w">
   <section class="pn"><div class="two">${f("day","日付","","date")}${f("title","シート名","例: AM 参加者試乗")}</div>
@@ -177,6 +180,21 @@ function setupView(){
   <section class="pn"><h2>測定項目</h2><p class="hint" style="margin-bottom:8px">制動だけならこのままでOK。ACCやラップも測るなら追加してね。</p>${mr}<button class="gh" data-a="mAdd">＋ 測定項目を追加</button></section>
   <div class="foot">${!isNew?`<button class="dg" data-a="sesDel">このシートを削除</button>`:""}<button class="pr" data-a="setupSave">${isNew?"追加して入力をはじめる":"保存"}</button></div></div>`;
 }
+function chart(r,big){const m=(r.ms||[])[0];if(!m)return"";const ts=r.tires||[];
+  const rows=ts.map((t,i)=>{const st=stats(vals(r,m,t));return{t,i,v:st.n?st.avg:null,n:st.n}});
+  const vs=rows.filter(x=>x.v!=null).map(x=>x.v);
+  if(!vs.length)return `<p class="empty" style="padding:${big?"60px":"10px"} 0">まだ数字がありません</p>`;
+  const mx=Math.max(...vs),mn=Math.min(...vs),lo=Math.max(0,mn-Math.max(1,(mx-mn))*1.2),hi=mx+(mx-lo)*0.04;
+  const fs=big?"clamp(16px,2.6vw,30px)":"13px",vfs=big?"clamp(22px,4vw,48px)":"16px",bh=big?"clamp(34px,6.5vh,70px)":"24px";
+  return `<div style="display:grid;grid-template-columns:auto 1fr;gap:${big?"18px 16px":"8px 10px"};align-items:center">${rows.map(x=>{const c=tcol(x.t,x.i);const w=x.v==null?0:Math.max(2,(x.v-lo)/(hi-lo)*78);
+    return `<div style="font-size:${fs};font-weight:700;text-align:right;max-width:${big?"34vw":"120px"};line-height:1.2">${h(x.t.name||x.t.lab||"")}</div>
+    <div style="display:flex;align-items:center;gap:10px;min-width:0"><div style="height:${bh};width:${w}%;background:${c[2]};border-radius:3px;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)"></div><b style="font-size:${vfs};font-variant-numeric:tabular-nums;white-space:nowrap">${x.v==null?"—":x.v.toFixed(1)}</b>${big?`<small style="color:var(--mu);font-size:clamp(11px,1.4vw,16px)">${x.n}回</small>`:""}</div>`}).join("")}</div>`}
+function graphView(){const ss=sessions();const r=ses(S.sid)||ss[ss.length-1];if(!r){S.graph=false;return roomView()}const m=(r.ms||[])[0]||{};
+  return `<div style="min-height:100vh;background:var(--s);display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)"><button class="ib" data-a="graphClose">‹ もどる</button><div class="tabs" style="flex:1">${ss.map(x=>`<button data-a="gses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}</div></div>
+  <div style="flex:1;padding:clamp(16px,4vw,48px);display:flex;flex-direction:column;gap:clamp(16px,3vh,36px);justify-content:center">
+  <h2 style="margin:0;text-align:center;font-size:clamp(18px,3vw,34px)">${h(m.name||"")} 比較${r.ppl?"（ドライバー：参加者）":""}<span style="font-weight:400;color:var(--mu);font-size:.6em;margin-left:10px">${h(S.data.venue||"")} ${h(md(r.day))} ${h(r.title||"")}${m.unit?` ・ 平均(${h(m.unit)})`:""}</span></h2>
+  ${chart(r,true)}</div></div>`}
 function matome(ss){if(ss.length<1)return"";
   const blocks=ss.map(r=>{const m=(r.ms||[])[0];if(!m)return"";return `<div style="margin-bottom:12px"><b style="font-size:13px">${h(md(r.day))} ${h(r.title||"")}</b><div class="tb"><table><tbody>${(r.tires||[]).map(t=>{const st=stats(vals(r,m,t));return `<tr><th style="width:auto;font-size:12px;color:var(--ink)">${h(t.lab||"")} ${h(t.name||"")}</th><td style="width:70px;font-weight:700">${rf(st.avg)}</td><td style="width:56px;color:var(--mu);font-size:11px">${st.n}回</td></tr>`}).join("")}</tbody></table></div></div>`}).join("");
   return `<section class="pn"><h2><span>まとめ(タイヤごとの平均)</span></h2>${blocks}</section>`}
@@ -220,7 +238,7 @@ function roomView(){
   <section class="pn"><div class="cond"><span></span><span style="text-align:center">START</span><span style="text-align:center">FINISH</span>
     <span>氷温</span>${ci("ice1","℃")}${ci("ice2","℃")}<span>外気温</span>${ci("air1","℃")}${ci("air2","℃")}
     <span>時刻</span><span class="tm">${ci("t1","9:20")}<button class="ib" data-a="nowT" data-k="t1">今</button></span><span class="tm">${ci("t2","11:20")}<button class="ib" data-a="nowT" data-k="t2">今</button></span></div></section>
-  ${mTabs}<div class="chips">${chips}</div>${ent}${mine}${sum}${matome(ss)}
+  ${mTabs}<button class="pr" data-a="graph" style="background:var(--nav)">📊 グラフで映す</button><div class="chips">${chips}</div>${ent}${mine}${sum}${matome(ss)}
   <div class="foot"><button class="gh" data-a="tsv">数字をコピー</button><button class="pr" data-a="xlsx">Excelで書き出す(全シート)</button></div>
   ${S.tsv?`<section class="pn"><h2>コピーできなかったので、長押しでコピーしてね<button class="ib" data-a="tsvClose">閉じる</button></h2><textarea readonly>${h(S.tsv)}</textarea></section>`:""}
   </div>`;
@@ -332,7 +350,7 @@ document.addEventListener("click",async ev=>{
   if(a==="mDel"){readSetup();S.setup.d.ms.splice(+b.dataset.i,1);rr();return}
   if(a==="setupSave"){readSetup();const d=S.setup.d;d.tires=d.tires.filter(t=>(t.lab||"").trim()||(t.name||"").trim());d.ms=d.ms.filter(m=>(m.name||"").trim()||m.unit);
     if(!d.day){toast("日付を入れてね");return}if(!d.tires.length){toast("タイヤを1本以上入れてね");return}if(!d.ms.length)d.ms=[{id:rid("m"),name:"20-0km",unit:"m"}];
-    const body={ppl:Math.max(0,parseInt(d.ppl)||0),laps:Math.max(1,parseInt(d.laps)||1),day:d.day,title:d.title.trim(),car:d.car.trim(),size:d.size.trim(),air:d.air.trim(),note:d.note.trim(),tires:d.tires.map(t=>({id:t.id,lab:t.lab.trim(),name:t.name.trim(),role:t.role||""})),ms:d.ms.map(m=>({id:m.id,name:m.name.trim(),unit:m.unit||""}))};
+    const body={ppl:Math.max(0,parseInt(d.ppl)||0),laps:Math.max(1,parseInt(d.laps)||1),day:d.day,title:d.title.trim(),car:d.car.trim(),size:d.size.trim(),air:d.air.trim(),note:d.note.trim(),tires:d.tires.map((t,i)=>({id:t.id,lab:t.lab.trim(),name:t.name.trim(),role:t.role||"",col:t.col||COLS[i%COLS.length][0]})),ms:d.ms.map(m=>({id:m.id,name:m.name.trim(),unit:m.unit||""}))};
     const sid=S.setup.id;
     if(sid){const u={};for(const[k,v]of Object.entries(body))u[`s.${sid}.${k}`]=v;S.setup=null;S.force=true;await upd(u);toast("保存しました");return}
     const nid=rid("s");S.setup=null;S.sid=nid;ls("kk.sid."+S.room,nid);S.ti=null;S.mi=0;S.justMade=false;S.force=true;
@@ -351,6 +369,9 @@ document.addEventListener("click",async ev=>{
   if(a==="editCancel"){S.edit=null;S.buf="";rr();return}
   if(a==="passDel"){const r=ses(S.sid);const m=r.ms[S.mi],t=r.tires.find(x=>x.id===S.ti);const p=S.edit;S.edit=null;S.buf="";S.force=true;upd({[`s.${r.id}.v.${key(m,t)}.p${p}`]:null});toast(`${plab(r,p)}を消しました`);return}
   if(a==="grid"){S.grid=!S.grid;rr();return}
+  if(a==="graph"){S.graph=true;rr();window.scrollTo(0,0);try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}return}
+  if(a==="graphClose"){S.graph=false;try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}rr();return}
+  if(a==="gses"){S.sid=b.dataset.id;ls("kk.sid."+S.room,S.sid);S.ti=null;rr();return}
   if(a==="nowT"){const d=new Date();S.force=true;upd({[`s.${S.sid}.cond.${b.dataset.k}`]:d.getHours()+":"+pad(d.getMinutes())});return}
   if(a==="xlsx"){exportX();return}
   if(a==="tsv"){const r=ses(S.sid);const m=r.ms[S.mi];const ts=r.tires;const vs=ts.map(t=>full(r,m,t));const n=maxPass(r,m);
