@@ -207,21 +207,23 @@ function roomView(){
   const ms=r.ms||[],tires=r.tires||[];if(S.mi>=ms.length)S.mi=0;const m=ms[S.mi];
   if(!S.ti||!tires.some(t=>t.id===S.ti)){const sv=ls("kk.t."+r.id);S.ti=tires.some(t=>t.id===sv)?sv:null}
   const t=tires.find(x=>x.id===S.ti);const unit=m&&m.unit||"";const c=r.cond||{};
-  const sTabs=`<div class="tabs" role="group" aria-label="シート">${ss.map(x=>`<button data-a="ses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}<button data-a="sesNew" aria-pressed="false">＋</button></div>`;
+  const sTabs=`<div class="tabs" role="group" aria-label="シート">${ss.map(x=>`<button data-a="ses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${x.done?"✓ ":""}${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}<button data-a="sesNew" aria-pressed="false">＋</button></div>`;
   const ci=(k,ph)=>`<input data-c="${k}" inputmode="text" value="${h(c[k]??"")}" placeholder="${ph}" aria-label="${ph}">`;
   const mTabs=ms.length>1?`<div class="tabs" role="group" aria-label="測定項目">${ms.map((x,i)=>`<button data-a="m" data-i="${i}" aria-pressed="${i===S.mi}">${h(x.name||"測定"+(i+1))}</button>`).join("")}</div>`:"";
   const chips=tires.map(x=>{const n=m?vals(r,m,x).filter(v=>v!==undefined).length:0;const who=(r.w||{})[m?key(m,x):""]||"";
     return `<button class="chip ${x.id===S.ti?"on":""}" data-a="t" data-id="${x.id}"><b>${h(x.lab||"?")}</b><span>${h(x.name||"未入力")}</span><small>${n}回${who?" ・ "+h(who):""}</small></button>`}).join("");
   let ent="";
-  if(!t)ent=`<p class="pick">↑ 自分が入力するタイヤを選んでね</p>`;
+  if(r.done){const d=new Date(r.done.at);ent=`<div class="share" style="background:#E3F5E8;align-items:center;text-align:center"><b style="font-size:17px;color:#1D6B35">✅ このシートは終了しました</b><span class="hint" style="color:#2f5d3c">${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${pad(d.getMinutes())} ${h(r.done.by||"")} ・ 数字は確定。入力・修正はできません</span><button class="gh" data-a="reopen" style="min-height:36px;font-size:13px">入力を再開する</button></div>`}
+  else if(!t)ent=`<p class="pick">↑ 自分が入力するタイヤを選んでね</p>`;
   else{const a=full(r,m,t);let nx=1;while(a[nx-1]!==undefined)nx++;const p=S.edit||nx;
     ent=`<div class="ent"><div class="now"><span>${h(t.lab||"")} ${h(t.name||"")}${ms.length>1?" ・ "+h(m.name):""}</span><b>${plab(r,p)}${S.edit?" を直す":""}</b></div>
     <div class="disp ${S.buf?"":"ph"}" aria-live="polite">${S.buf?h(S.buf):"0.00"}<small>${h(unit)}</small></div>
     <div class="keys">${["7","8","9","4","5","6","1","2","3",".","0","⌫"].map(k=>`<button data-a="k" data-k="${k}" aria-label="${k==="⌫"?"1文字消す":k}">${k}</button>`).join("")}</div>
     <div class="acts">${S.edit?`<button class="gh" data-a="editCancel">やめる</button><button class="dg" data-a="passDel">消す</button>`:""}<button class="gh" data-a="miss" style="min-height:62px;flex:0 0 auto;font-size:13px;line-height:1.3">計測<br>できず</button><button class="pr go" data-a="go" ${S.buf&&isFinite(+S.buf)?"":"disabled"}>${S.edit?"直す":"記録"}</button></div></div>`}
+  const fin=!r.done&&S.canFinish!==false?`<button class="gh" data-a="finish" style="width:100%;min-height:48px;border-color:#1D6B35;color:#1D6B35;font-weight:700">■ ${h(r.title||"このシート")}を終了して保存</button>`:"";
   let mine="";
   if(t&&m){const a=full(r,m,t),st=stats(vals(r,m,t));const done=a.filter(v=>v!==undefined).length,miss=a.filter(v=>v==="x").length;
-    mine=`<section class="pn"><h2><span>${h(t.lab||"")} の記録</span><small class="hint">タップで直せる</small></h2>
+    mine=`<section class="pn"><h2><span>${h(t.lab||"")} の記録</span>${r.done?"":`<small class="hint">タップで直せる</small>`}</h2>
     <div class="st"><div><span>Avg.${unit?`(${h(unit==="秒"?"sec":unit)})`:""}</span><b>${rf(st.avg)}</b></div><div><span>Stdev</span><b>${rf(st.sd,3)}</b></div>${r.ppl?`<div><span>入力済み${miss?` (×${miss})`:""}</span><b>${done}/${r.ppl*(r.laps||1)}</b></div>`:`<div><span>Avg.</span><b>${st.trim!==null?rf(st.trim):st.f7<7?`あと${7-st.f7}回`:"—"}</b></div>`}</div>
     <div class="ps">${a.map((v,i)=>v===undefined?"":`<button class="${S.edit===i+1?"on":""}" data-a="edit" data-p="${i+1}"><small>${plab(r,i+1,1)}</small><b style="${v==="x"?"color:var(--ng)":""}">${v==="x"?"×":rf(v)}</b></button>`).join("")||`<p class="empty" style="grid-column:1/-1;padding:4px">まだありません</p>`}</div></section>`}
   let sum="";
@@ -238,7 +240,7 @@ function roomView(){
   <section class="pn"><div class="cond"><span></span><span style="text-align:center">START</span><span style="text-align:center">FINISH</span>
     <span>氷温</span>${ci("ice1","℃")}${ci("ice2","℃")}<span>外気温</span>${ci("air1","℃")}${ci("air2","℃")}
     <span>時刻</span><span class="tm">${ci("t1","9:20")}<button class="ib" data-a="nowT" data-k="t1">今</button></span><span class="tm">${ci("t2","11:20")}<button class="ib" data-a="nowT" data-k="t2">今</button></span></div></section>
-  ${mTabs}<button class="pr" data-a="graph" style="background:var(--nav)">📊 グラフで映す</button><div class="chips">${chips}</div>${ent}${mine}${sum}${matome(ss)}
+  ${mTabs}<button class="pr" data-a="graph" style="background:var(--nav)">📊 グラフで映す</button><div class="chips">${chips}</div>${ent}${mine}${sum}${fin}${matome(ss)}
   <div class="foot"><button class="gh" data-a="tsv">数字をコピー</button><button class="pr" data-a="xlsx">Excelで書き出す(全シート)</button></div>
   ${S.tsv?`<section class="pn"><h2>コピーできなかったので、長押しでコピーしてね<button class="ib" data-a="tsvClose">閉じる</button></h2><textarea readonly>${h(S.tsv)}</textarea></section>`:""}
   </div>`;
@@ -358,6 +360,10 @@ document.addEventListener("click",async ev=>{
   if(a==="sesDel"){const sid=S.setup&&S.setup.id;if(!sid)return;if(!confirm("このシートを削除しますか？入力した数字も消えます"))return;S.setup=null;S.sid=null;S.force=true;await upd({[`s.${sid}`]:null});toast("削除しました");return}
   if(a==="m"){S.mi=+b.dataset.i;S.buf="";S.edit=null;rr();return}
   if(a==="t"){S.ti=b.dataset.id;S.buf="";S.edit=null;ls("kk.t."+S.sid,S.ti);rr();return}
+  if(["k","go","miss","edit","passDel"].includes(a)){const rr0=ses(S.sid);if(rr0&&rr0.done){toast("終了したシートです。直すときは「入力を再開する」を押してね");return}}
+  if(a==="finish"){const r=ses(S.sid);if(!r)return;if(!confirm(`「${r.title||"このシート"}」を終了しますか？\n終了すると入力・修正ができなくなります(あとで再開もできます)`))return;
+    const d=new Date();const u={[`s.${r.id}.done`]:{at:d.toISOString(),by:S.name}};if(!(r.cond&&r.cond.t2))u[`s.${r.id}.cond.t2`]=d.getHours()+":"+pad(d.getMinutes());S.buf="";S.edit=null;S.force=true;await upd(u);window.scrollTo(0,0);toast("終了して保存しました");return}
+  if(a==="reopen"){const r=ses(S.sid);if(!r)return;if(!confirm("入力を再開しますか？"))return;S.force=true;await upd({[`s.${r.id}.done`]:null});toast("再開しました");return}
   if(a==="k"){const k=b.dataset.k;if(k==="⌫")S.buf=S.buf.slice(0,-1);else if(k==="."){if(!S.buf.includes("."))S.buf=(S.buf||"0")+"."}else if(S.buf.replace(".","").length<6)S.buf=(S.buf==="0"?"":S.buf)+k;rr();return}
   if(a==="go"){const r=ses(S.sid);if(!r)return;const m=r.ms[S.mi],t=r.tires.find(x=>x.id===S.ti);if(!m||!t||!S.buf||!isFinite(+S.buf))return;
     const arr=full(r,m,t);let p=S.edit;if(!p){p=1;while(arr[p-1]!==undefined)p++}const v=Math.round(+S.buf*1000)/1000;const was=S.edit;S.buf="";S.edit=null;S.force=true;
