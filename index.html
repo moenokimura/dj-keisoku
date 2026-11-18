@@ -31,7 +31,7 @@ input,select{background:var(--s);border:1px solid var(--line);border-radius:8px;
 .hint{font-size:12px;color:var(--mu);margin:0;line-height:1.6}.empty{color:var(--mu);text-align:center;padding:16px 0;margin:0}
 .f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.f label{font-size:11px;font-weight:700;color:var(--mu)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:420px){.two{grid-template-columns:1fr}}
-.row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}.row .nm{flex:1 1 60%;min-width:0}.row .lab{flex:0 0 46px;text-align:center;font-weight:700}.row select{flex:0 0 auto;width:auto}
+.row{display:flex;gap:6px;margin-bottom:8px;align-items:center}.row .lab{flex:0 0 46px;text-align:center;font-weight:700}.row select{flex:0 0 auto;width:auto}
 .foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .card{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--s);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .card b{display:block}.card small{color:var(--mu);font-size:12px}.card .n{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
@@ -169,7 +169,7 @@ function listView(){
 function setupView(){
   const d=S.setup.d,isNew=!S.setup.id;
   const f=(k,l,ph="",type="text")=>`<div class="f"><label>${l}</label><input type="${type}" data-s="${k}" value="${h(d[k]||"")}" placeholder="${ph}"></div>`;
-  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input class="nm" data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><select data-s="tires.${i}.col" aria-label="グラフの色" style="width:auto">${COLS.map((c,k)=>`<option value="${c[0]}" ${(t.col||COLS[i%COLS.length][0])===c[0]?"selected":""}>${c[1]}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
+  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><select data-s="tires.${i}.col" aria-label="グラフの色" style="width:auto">${COLS.map((c,k)=>`<option value="${c[0]}" ${(t.col||COLS[i%COLS.length][0])===c[0]?"selected":""}>${c[1]}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
   const mr=d.ms.map((m,i)=>`<div class="row"><input data-s="ms.${i}.name" value="${h(m.name)}" placeholder="例: 20-0km / ACC / LAP TIME" aria-label="測定項目"><select data-s="ms.${i}.unit" aria-label="単位">${UNITS.map(o=>`<option value="${o}" ${m.unit===o?"selected":""}>${o||"単位なし"}</option>`).join("")}</select>${d.ms.length>1?`<button class="ib" data-a="mDel" data-i="${i}" aria-label="消す">✕</button>`:""}</div>`).join("");
   return top(isNew?"シートを追加":"シートの設定",`<button class="ib" data-a="setupCancel">‹</button>`)+`<div class="w">
   <section class="pn"><div class="two">${f("day","日付","","date")}${f("title","シート名","例: AM 参加者試乗")}</div>
@@ -193,11 +193,11 @@ function graphView(){const ss=sessions();const r=ses(S.sid)||ss[ss.length-1];if(
   return `<div style="min-height:100vh;background:var(--s);display:flex;flex-direction:column">
   <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)"><button class="ib" data-a="graphClose">‹ もどる</button><div class="tabs" style="flex:1">${ss.map(x=>`<button data-a="gses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}</div></div>
   <div style="flex:1;padding:clamp(16px,4vw,48px);display:flex;flex-direction:column;gap:clamp(16px,3vh,36px);justify-content:center">
-  <h2 style="margin:0;text-align:center;font-size:clamp(18px,3vw,34px)">${h(m.name||"")} 比較${r.ppl?"（ドライバー：参加者）":""}<span style="font-weight:400;color:var(--mu);font-size:.6em;margin-left:10px">${h(S.data.venue||"")} ${h(md(r.day))} ${h(r.title||"")}${m.unit?` ・ 平均(${h(m.unit)})`:""}</span></h2>
+  <h2 style="margin:0;text-align:center;font-size:clamp(18px,3vw,34px)">${h(m.name||"")} 比較${r.ppl?"（ドライバー：参加者）":""}<span style="font-weight:400;color:var(--mu);font-size:.6em;margin-left:10px">${h(S.data.venue||"")} ${h(md(r.day))} ${h(r.title||"")}${m.unit?` ・ Avg.(${h(m.unit==="秒"?"sec":m.unit)})`:""}</span></h2>
   ${chart(r,true)}</div></div>`}
 function matome(ss){if(ss.length<1)return"";
   const blocks=ss.map(r=>{const m=(r.ms||[])[0];if(!m)return"";return `<div style="margin-bottom:12px"><b style="font-size:13px">${h(md(r.day))} ${h(r.title||"")}</b><div class="tb"><table><tbody>${(r.tires||[]).map(t=>{const st=stats(vals(r,m,t));return `<tr><th style="width:auto;font-size:12px;color:var(--ink)">${h(t.lab||"")} ${h(t.name||"")}</th><td style="width:70px;font-weight:700">${rf(st.avg)}</td><td style="width:56px;color:var(--mu);font-size:11px">${st.n}回</td></tr>`}).join("")}</tbody></table></div></div>`}).join("");
-  return `<section class="pn"><h2><span>まとめ(タイヤごとの平均)</span></h2>${blocks}</section>`}
+  return `<section class="pn"><h2><span>まとめ(タイヤごとのAvg.)</span></h2>${blocks}</section>`}
 function roomView(){
   const D=S.data,ss=sessions();
   const share=S.justMade||!ss.length?`<div class="share"><b style="font-size:14px">このURLを入力する人に送ってね</b><code>${h(roomUrl(S.room))}</code><div class="two"><button class="line" data-a="line">LINEで送る</button><button class="gh" data-a="copyUrl">URLをコピー</button></div></div>`:"";
@@ -222,15 +222,15 @@ function roomView(){
   let mine="";
   if(t&&m){const a=full(r,m,t),st=stats(vals(r,m,t));const done=a.filter(v=>v!==undefined).length,miss=a.filter(v=>v==="x").length;
     mine=`<section class="pn"><h2><span>${h(t.lab||"")} の記録</span><small class="hint">タップで直せる</small></h2>
-    <div class="st"><div><span>平均</span><b>${rf(st.avg)}</b></div><div><span>標準偏差</span><b>${rf(st.sd,3)}</b></div>${r.ppl?`<div><span>入力済み${miss?` (×${miss})`:""}</span><b>${done}/${r.ppl*(r.laps||1)}</b></div>`:`<div><span>5本平均</span><b>${st.trim!==null?rf(st.trim):st.f7<7?`あと${7-st.f7}回`:"—"}</b></div>`}</div>
+    <div class="st"><div><span>Avg.${unit?`(${h(unit==="秒"?"sec":unit)})`:""}</span><b>${rf(st.avg)}</b></div><div><span>Stdev</span><b>${rf(st.sd,3)}</b></div>${r.ppl?`<div><span>入力済み${miss?` (×${miss})`:""}</span><b>${done}/${r.ppl*(r.laps||1)}</b></div>`:`<div><span>Avg.</span><b>${st.trim!==null?rf(st.trim):st.f7<7?`あと${7-st.f7}回`:"—"}</b></div>`}</div>
     <div class="ps">${a.map((v,i)=>v===undefined?"":`<button class="${S.edit===i+1?"on":""}" data-a="edit" data-p="${i+1}"><small>${plab(r,i+1,1)}</small><b style="${v==="x"?"color:var(--ng)":""}">${v==="x"?"×":rf(v)}</b></button>`).join("")||`<p class="empty" style="grid-column:1/-1;padding:4px">まだありません</p>`}</div></section>`}
   let sum="";
   if(m){const sts=tires.map(x=>stats(vals(r,m,x)));const mp=maxPass(r,m);
     const hd=`<tr><th></th>${tires.map(x=>`<th class="${x.id===S.ti?"me":""}"><b>${h(x.lab||"")}</b><small>${h(x.name||"")}</small></th>`).join("")}</tr>`;
-    const rows=[["平均",s=>rf(s.avg)],["SD",s=>rf(s.sd,3)],...(r.ppl?[]:[["5本平均",s=>s.trim!==null?rf(s.trim):"—"]]),["回数",s=>s.n||"0"]].map(([l,fn])=>`<tr class="sr"><th>${l}</th>${sts.map((s,i)=>`<td class="${tires[i].id===S.ti?"me":""}">${fn(s)}</td>`).join("")}</tr>`).join("");
+    const rows=[[`Avg.${unit?`(${h(unit==="秒"?"sec":unit)})`:""}`,s=>rf(s.avg)],["Stdev",s=>rf(s.sd,3)],...(r.ppl?[]:[["Avg.",s=>s.trim!==null?rf(s.trim):"—"]]),["回数",s=>s.n||"0"]].map(([l,fn])=>`<tr class="sr"><th>${l}</th>${sts.map((s,i)=>`<td class="${tires[i].id===S.ti?"me":""}">${fn(s)}</td>`).join("")}</tr>`).join("");
     let g="";if(S.grid){const vs=tires.map(x=>full(r,m,x));for(let p=1;p<=mp;p++)g+=`<tr><th>${plab(r,p,1)}</th>${vs.map((a,i)=>`<td class="${tires[i].id===S.ti?"me":""}">${a[p-1]==="x"?"×":a[p-1]!==undefined?rf(a[p-1]):""}</td>`).join("")}</tr>`}
     sum=`<section class="pn"><h2><span>全体${unit?`(${h(unit)})`:""}</span><button class="ib" data-a="grid">${S.grid?"たたむ":"全部見る"}</button></h2><div class="tb"><table><thead>${hd}</thead><tbody>${rows}${g}</tbody></table></div>
-    ${r.ppl?"":`<p class="hint" style="margin-top:8px">5本平均＝Pass1〜7のうち一番大きい値と小さい値を除いた平均</p>`}</section>`}
+    ${r.ppl?"":`<p class="hint" style="margin-top:8px">Avg.＝Pass1〜7のうち最大と最小を除いた5回の平均</p>`}</section>`}
   const info=[r.car,r.size,r.air&&"空気圧 "+r.air,r.note].filter(Boolean).map(h).join(" ・ ");
   return head+`<div class="w">${S.showShare?share||`<div class="share"><b style="font-size:14px">このURLを入力する人に送ってね</b><code>${h(roomUrl(S.room))}</code><div class="two"><button class="line" data-a="line">LINEで送る</button><button class="gh" data-a="copyUrl">URLをコピー</button></div></div>`:share}
   ${sTabs}
@@ -293,11 +293,11 @@ function sheetXml(r){
   let cols=`<col min="1" max="1" width="17" customWidth="1"/><col min="2" max="2" width="8.7" customWidth="1"/><col min="3" max="3" width="24.9" customWidth="1"/><col min="4" max="${3+W}" width="25.6" customWidth="1"/><col min="${4+W}" max="${4+W}" width="4.8" customWidth="1"/><col min="${5+W}" max="${5+W}" width="16.6" customWidth="1"/><col min="${6+W}" max="60" width="16.6" customWidth="1"/>`;
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane xSplit="3" ySplit="${trR}" topLeftCell="D${trR+1}" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${sd}</sheetData></worksheet>`;
 }
-function sumXml(ss,names){let ro=1;let sd=`<row r="1"><c r="A1" s="1" t="inlineStr"><is><t>タイヤごとの平均</t></is></c></row>`;ro=3;
+function sumXml(ss,names){let ro=1;let sd=`<row r="1"><c r="A1" s="1" t="inlineStr"><is><t>タイヤごとのAvg.</t></is></c></row>`;ro=3;
   const str=(ref,v,st)=>`<c r="${ref}"${st?` s="${st}"`:""} t="inlineStr"><is><t xml:space="preserve">${xe(v)}</t></is></c>`;
   ss.forEach((r,k)=>{const m=(r.ms||[])[0];if(!m)return;const W=Math.max(7,(r.tires||[]).length);const avR=3+W+2;const q="'"+names[k].replace(/'/g,"''")+"'";
     sd+=`<row r="${ro}">${str("A"+ro,names[k],1)}</row>`;ro++;
-    sd+=`<row r="${ro}">${str("A"+ro,"タイヤ",12)}${str("B"+ro,"平均",12)}${str("C"+ro,"回数",12)}</row>`;ro++;
+    sd+=`<row r="${ro}">${str("A"+ro,"タイヤ",12)}${str("B"+ro,"Avg.",12)}${str("C"+ro,"回数",12)}</row>`;ro++;
     (r.tires||[]).forEach((t,i)=>{const L=colL(3+i);const st=stats(vals(r,m,t));
       sd+=`<row r="${ro}">${str("A"+ro,[t.lab,t.name].filter(Boolean).join(" "))}<c r="B${ro}" s="9"><f>${xe(`IFERROR(${q}!${L}${avR}*1,"")`)}</f>${st.n?`<v>${st.avg}</v>`:""}</c><c r="C${ro}" s="5"><f>${xe(`COUNT(${q}!${L}${avR+3}:${L}${avR+500})`)}</f><v>${st.n}</v></c></row>`;ro++});
     ro++});
