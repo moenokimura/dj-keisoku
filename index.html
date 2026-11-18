@@ -31,7 +31,7 @@ input,select{background:var(--s);border:1px solid var(--line);border-radius:8px;
 .hint{font-size:12px;color:var(--mu);margin:0;line-height:1.6}.empty{color:var(--mu);text-align:center;padding:16px 0;margin:0}
 .f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.f label{font-size:11px;font-weight:700;color:var(--mu)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:420px){.two{grid-template-columns:1fr}}
-.row{display:flex;gap:6px;margin-bottom:8px;align-items:center}.row .lab{flex:0 0 46px;text-align:center;font-weight:700}.row select{flex:0 0 auto;width:auto}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}.row .nm{flex:1 1 60%;min-width:0}.row .lab{flex:0 0 46px;text-align:center;font-weight:700}.row select{flex:0 0 auto;width:auto}
 .foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .card{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--s);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .card b{display:block}.card small{color:var(--mu);font-size:12px}.card .n{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
@@ -169,7 +169,7 @@ function listView(){
 function setupView(){
   const d=S.setup.d,isNew=!S.setup.id;
   const f=(k,l,ph="",type="text")=>`<div class="f"><label>${l}</label><input type="${type}" data-s="${k}" value="${h(d[k]||"")}" placeholder="${ph}"></div>`;
-  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><select data-s="tires.${i}.col" aria-label="グラフの色" style="width:auto">${COLS.map((c,k)=>`<option value="${c[0]}" ${(t.col||COLS[i%COLS.length][0])===c[0]?"selected":""}>${c[1]}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
+  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input class="nm" data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><select data-s="tires.${i}.col" aria-label="グラフの色" style="width:auto">${COLS.map((c,k)=>`<option value="${c[0]}" ${(t.col||COLS[i%COLS.length][0])===c[0]?"selected":""}>${c[1]}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
   const mr=d.ms.map((m,i)=>`<div class="row"><input data-s="ms.${i}.name" value="${h(m.name)}" placeholder="例: 20-0km / ACC / LAP TIME" aria-label="測定項目"><select data-s="ms.${i}.unit" aria-label="単位">${UNITS.map(o=>`<option value="${o}" ${m.unit===o?"selected":""}>${o||"単位なし"}</option>`).join("")}</select>${d.ms.length>1?`<button class="ib" data-a="mDel" data-i="${i}" aria-label="消す">✕</button>`:""}</div>`).join("");
   return top(isNew?"シートを追加":"シートの設定",`<button class="ib" data-a="setupCancel">‹</button>`)+`<div class="w">
   <section class="pn"><div class="two">${f("day","日付","","date")}${f("title","シート名","例: AM 参加者試乗")}</div>
