@@ -257,53 +257,57 @@ function zip(files){const enc=new TextEncoder(),parts=[],cen=[];let off=0;
   return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
 const colL=n=>{let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
 const xe=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,"");
+const XS={def:0,b:1,title:2,gray:3,lab:4,val:5,avg:6,sd:7,cnt:8,plab:9,txt:10,tm:11,cond:12,hd:13,ch:20};
+function xRows(cells){const rows={};for(const k of Object.keys(cells)){if(k==="__h")continue;const[ro,co]=k.split(",").map(Number);(rows[ro]=rows[ro]||[]).push(co)}
+  let sd="";for(const ro of Object.keys(rows).map(Number).sort((a,b)=>a-b)){const ht=cells.__h&&cells.__h[ro]?` ht="${cells.__h[ro]}" customHeight="1"`:"";sd+=`<row r="${ro}"${ht}>`;for(const co of rows[ro].sort((a,b)=>a-b)){const x=cells[ro+","+co];if(!x)continue;const ref=colL(co)+ro,st=x.s?` s="${x.s}"`:"";
+    if(x.f){const isN=typeof x.v==="number";sd+=`<c r="${ref}"${st}${isN?"":` t="str"`}><f>${xe(x.f)}</f><v>${isN?x.v:xe(x.v??"")}</v></c>`}
+    else if(typeof x.v==="number")sd+=`<c r="${ref}"${st}><v>${x.v}</v></c>`;else if(x.v===""||x.v==null)sd+=`<c r="${ref}"${st}/>`;else sd+=`<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${xe(x.v)}</t></is></c>`}sd+=`</row>`}return sd}
+function xSheet(sd,cols,frz,extra=""){return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0">${frz?`<pane xSplit="1" ySplit="${frz}" topLeftCell="B${frz+1}" activePane="bottomRight" state="frozen"/>`:""}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${cols}</cols><sheetData>${sd}</sheetData>${extra}<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/></worksheet>`}
 function sheetXml(r){
-  const cells={};const put=(ro,co,v,s,f)=>{if((v===undefined||v===null||v==="")&&!f)return;cells[ro+","+co]={v,s,f}};
-  const tires=r.tires||[],ms=r.ms||[],c=r.cond||{},N=tires.length,W=Math.max(7,N);const dd=(r.day||"").split("-").map(Number);
-  // 1行目: 日付・会場 / 条件
-  put(1,0,dd.length===3?`${dd[0]},${dd[1]},${dd[2]}`:r.day,1);put(1,1,S.data.venue||"",1);
-  put(2,0,"dropJapan");put(2,2,"Tire Name",1);
-  tires.forEach((t,i)=>{put(3+i,1,t.role||"",7);put(3+i,2,[t.lab,t.name].filter(Boolean).join(" "),6)});
-  const carR=3+W,hdr=carR+1,avR=hdr+1,sdR=hdr+2,trR=hdr+3,p1=hdr+4,PN=r.ppl?Math.max(r.ppl*(r.laps||1),...ms.map(m=>maxPass(r,m))):100;
-  put(carR,0,[r.car,r.size].filter(Boolean).join("\n"),3);if(r.air)put(hdr,0,"Air "+r.air);if(r.note)put(avR,0,"*"+r.note);
-  const cc=3+W+1;
-  const num=v=>{if(v===""||v==null)return v;const x=String(v).replace(",",".").replace("−","-");return isFinite(+x)?+x:v};
-  const tm=v=>{const m=/^(\d{1,2}):(\d{2})$/.exec(String(v||"").trim());return m?(+m[1]*60+ +m[2])/1440:v};
-  ["START","FINISH","START","FINISH"].forEach((x,i)=>put(1,cc+1+i,x,12));
-  put(2,cc,"氷温",12);put(2,cc+1,num(c.ice1),12);put(2,cc+2,num(c.ice2),12);put(2,cc+3,tm(c.t1),11);put(2,cc+4,tm(c.t2),11);
-  put(3,cc,"外気温",12);put(3,cc+1,num(c.air1),12);put(3,cc+2,num(c.air2),12);
-  let lc=2,c0=3;
-  ms.forEach((m,mi)=>{
-    const u=m.unit==="m"?"m":m.unit==="秒"?"sec":m.unit;
-    put(mi===0?carR:hdr,lc,m.name||"",1);
-    put(avR,lc,mi===0?`Avg.(${u||""})`:`Avg(${u||""})`,mi===0?1:0);put(sdR,lc,"Stdev");if(!r.ppl)put(trR,lc,"Avg.");
-    for(let p=1;p<=PN;p++)put(p1+p-1,lc,r.ppl?plab(r,p):"Pass"+p);
-    tires.forEach((t,i)=>{const col=c0+i,L=colL(col),a=vals(r,m,t),st=stats(a);
-      if(mi===0)put(hdr,col,(t.role?t.role+": ":"")+[t.lab,t.name].filter(Boolean).join(" "),8,`IF(${colL(1)}${3+i}="",${colL(2)}${3+i},${colL(1)}${3+i}&": "&${colL(2)}${3+i})`);
-      else put(hdr,col,[t.lab,t.name].filter(Boolean).join(" "),8);
-      const rg=`${L}${p1}:${L}${p1+PN-1}`,r7=`${L}${p1}:${L}${p1+6}`;
-      put(avR,col,st.n?+st.avg.toFixed(6):"",9,`IFERROR(AVERAGE(${rg}),"")`);
-      put(sdR,col,st.sd!=null?+st.sd.toFixed(6):"",10,`IFERROR(STDEV(${rg}),"")`);
-      if(!r.ppl)put(trR,col,st.trim!=null?+st.trim.toFixed(6):"",9,`IF(COUNT(${r7})=7,(SUM(${r7})-MAX(${r7})-MIN(${r7}))/5,"")`);
-      full(r,m,t).forEach((v,pi)=>{if(v!==undefined)put(p1+pi,col,v==="x"?"×":v,5)})});
-    lc=c0+W+(mi===0?1:1);c0=lc+1;
+  const cells={__h:{}};const put=(ro,co,v,s,f)=>{cells[ro+","+co]={v,s,f}};
+  const tires=r.tires||[],ms=r.ms||[],c=r.cond||{},N=tires.length;
+  const num=v=>{if(v===""||v==null)return "";const x=String(v).replace(",",".").replace("−","-");return isFinite(+x)?+x:v};
+  const tm=v=>{const m=/^(\d{1,2}):(\d{2})$/.exec(String(v||"").trim());return m?(+m[1]*60+ +m[2])/1440:(v||"")};
+  put(1,0,`${md(r.day)}  ${S.data.venue||""}  ${r.title||""}`,XS.title);cells.__h[1]=26;
+  const info=[r.car,r.size,r.air&&"空気圧 "+r.air,r.ppl?`参加者 ${Math.ceil(Math.max(0,...ms.map(m=>maxPass(r,m)))/(+r.laps||1))||r.ppl}人 × ${r.laps||1}周`:"",r.note].filter(Boolean).join("  /  ");
+  put(2,0,info,XS.gray);
+  put(4,0,"",XS.ch);put(4,1,"START",XS.ch);put(4,2,"FINISH",XS.ch);
+  put(5,0,"氷温(℃)",XS.lab);put(5,1,num(c.ice1),XS.cond);put(5,2,num(c.ice2),XS.cond);
+  put(6,0,"外気温(℃)",XS.lab);put(6,1,num(c.air1),XS.cond);put(6,2,num(c.air2),XS.cond);
+  put(7,0,"時刻",XS.lab);put(7,1,tm(c.t1),XS.tm);put(7,2,tm(c.t2),XS.tm);
+  let row=9,frz=0;
+  ms.forEach((m,mi)=>{const hdr=row;if(!frz)frz=hdr;
+    put(hdr,0,(m.name||"")+(m.unit?` (${m.unit})`:""),XS.lab);cells.__h[hdr]=44;
+    tires.forEach((t,i)=>{const k=COLS.indexOf(tcol(t,i));put(hdr,1+i,[t.lab,t.name].filter(Boolean).join(" "),XS.hd+(k<0?0:k))});
+    let rr=hdr+1;const hasRole=tires.some(t=>t.role);
+    if(hasRole){put(rr,0,"",XS.lab);tires.forEach((t,i)=>put(rr,1+i,t.role||"",XS.txt));rr++}
+    const avR=rr,sdR=rr+1,trR=r.ppl?null:rr+2,cnR=r.ppl?rr+2:rr+3;const p1=cnR+2;
+    const mp=Math.max(maxPass(r,m),r.ppl?r.ppl*(r.laps||1):10);
+    put(avR,0,"Avg.",XS.lab);put(sdR,0,"Stdev",XS.lab);if(trR)put(trR,0,"5本平均",XS.lab);put(cnR,0,"回数",XS.lab);
+    tires.forEach((t,i)=>{const col=1+i,L=colL(col),a=full(r,m,t),st=stats(vals(r,m,t));const rg=`${L}${p1}:${L}${p1+mp-1}`,r7=`${L}${p1}:${L}${p1+6}`;
+      put(avR,col,st.n?+st.avg.toFixed(6):"",XS.avg,`IFERROR(AVERAGE(${rg}),"")`);
+      put(sdR,col,st.sd!=null?+st.sd.toFixed(6):"",XS.sd,`IFERROR(STDEV(${rg}),"")`);
+      if(trR)put(trR,col,st.trim!=null?+st.trim.toFixed(6):"",XS.avg,`IF(COUNT(${r7})=7,(SUM(${r7})-MAX(${r7})-MIN(${r7}))/5,"")`);
+      put(cnR,col,st.n,XS.cnt,`COUNT(${rg})`);
+      for(let p=1;p<=mp;p++){const v=a[p-1];put(p1+p-1,col,v===undefined?"":v==="x"?"×":v,v==="x"?XS.txt:XS.val)}});
+    for(let p=1;p<=mp;p++)put(p1+p-1,0,plab(r,p),XS.plab);
+    row=p1+mp+2;
   });
-  const rows={};for(const k of Object.keys(cells)){const[ro,co]=k.split(",").map(Number);(rows[ro]=rows[ro]||[]).push(co)}
-  let sd="";for(const ro of Object.keys(rows).map(Number).sort((a,b)=>a-b)){const ht=ro===carR?` ht="124" customHeight="1"`:ro===hdr?` ht="42.5" customHeight="1"`:"";sd+=`<row r="${ro}"${ht}>`;for(const co of rows[ro].sort((a,b)=>a-b)){const x=cells[ro+","+co],ref=colL(co)+ro,st=x.s?` s="${x.s}"`:"";
-    if(x.f){const isN=typeof x.v==="number";sd+=`<c r="${ref}"${st}${isN?"":` t="str"`}><f>${xe(x.f)}</f><v>${isN?x.v:xe(x.v||"")}</v></c>`}
-    else if(typeof x.v==="number")sd+=`<c r="${ref}"${st}><v>${x.v}</v></c>`;else sd+=`<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${xe(x.v)}</t></is></c>`}sd+=`</row>`}
-  let cols=`<col min="1" max="1" width="17" customWidth="1"/><col min="2" max="2" width="8.7" customWidth="1"/><col min="3" max="3" width="24.9" customWidth="1"/><col min="4" max="${3+W}" width="25.6" customWidth="1"/><col min="${4+W}" max="${4+W}" width="4.8" customWidth="1"/><col min="${5+W}" max="${5+W}" width="16.6" customWidth="1"/><col min="${6+W}" max="60" width="16.6" customWidth="1"/>`;
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane xSplit="3" ySplit="${trR}" topLeftCell="D${trR+1}" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${sd}</sheetData></worksheet>`;
+  const cols=`<col min="1" max="1" width="14" customWidth="1"/><col min="2" max="${Math.max(2,N+1)}" width="16" customWidth="1"/>`;
+  return xSheet(xRows(cells),cols,frz);
 }
-function sumXml(ss,names){let ro=1;let sd=`<row r="1"><c r="A1" s="1" t="inlineStr"><is><t>タイヤごとのAvg.</t></is></c></row>`;ro=3;
-  const str=(ref,v,st)=>`<c r="${ref}"${st?` s="${st}"`:""} t="inlineStr"><is><t xml:space="preserve">${xe(v)}</t></is></c>`;
-  ss.forEach((r,k)=>{const m=(r.ms||[])[0];if(!m)return;const W=Math.max(7,(r.tires||[]).length);const avR=3+W+2;const q="'"+names[k].replace(/'/g,"''")+"'";
-    sd+=`<row r="${ro}">${str("A"+ro,names[k],1)}</row>`;ro++;
-    sd+=`<row r="${ro}">${str("A"+ro,"タイヤ",12)}${str("B"+ro,"Avg.",12)}${str("C"+ro,"回数",12)}</row>`;ro++;
-    (r.tires||[]).forEach((t,i)=>{const L=colL(3+i);const st=stats(vals(r,m,t));
-      sd+=`<row r="${ro}">${str("A"+ro,[t.lab,t.name].filter(Boolean).join(" "))}<c r="B${ro}" s="9"><f>${xe(`IFERROR(${q}!${L}${avR}*1,"")`)}</f>${st.n?`<v>${st.avg}</v>`:""}</c><c r="C${ro}" s="5"><f>${xe(`COUNT(${q}!${L}${avR+3}:${L}${avR+500})`)}</f><v>${st.n}</v></c></row>`;ro++});
-    ro++});
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="34" customWidth="1"/><col min="2" max="3" width="12" customWidth="1"/></cols><sheetData>${sd}</sheetData></worksheet>`}
+function sumXml(ss,names){const cells={__h:{}};const put=(ro,co,v,s,f)=>{cells[ro+","+co]={v,s,f}};
+  put(1,0,`${S.data.title||""}  タイヤごとのAvg.`,XS.title);cells.__h[1]=26;put(2,0,S.data.venue||"",XS.gray);
+  let row=4,maxN=1;
+  ss.forEach((r,k)=>{const m=(r.ms||[])[0];if(!m)return;const ts=r.tires||[];maxN=Math.max(maxN,ts.length);const q="'"+names[k].replace(/'/g,"''")+"'";
+    const hasRole=ts.some(t=>t.role);const avR=9+1+(hasRole?1:0);const cnR=avR+(r.ppl?2:3);
+    put(row,0,`${md(r.day)} ${r.title||""}${r.done?" ✓":""}`,XS.b);row++;
+    put(row,0,(m.name||"")+(m.unit?` (${m.unit})`:""),XS.lab);cells.__h[row]=44;
+    ts.forEach((t,i)=>{const kk=COLS.indexOf(tcol(t,i));put(row,1+i,[t.lab,t.name].filter(Boolean).join(" "),XS.hd+(kk<0?0:kk))});row++;
+    put(row,0,"Avg.",XS.lab);ts.forEach((t,i)=>{const st=stats(vals(r,m,t));put(row,1+i,st.n?+st.avg.toFixed(6):"",XS.avg,`IFERROR(${q}!${colL(1+i)}${avR}*1,"")`)});row++;
+    put(row,0,"回数",XS.lab);ts.forEach((t,i)=>{const st=stats(vals(r,m,t));put(row,1+i,st.n,XS.cnt,`${q}!${colL(1+i)}${cnR}`)});row+=2});
+  const cols=`<col min="1" max="1" width="14" customWidth="1"/><col min="2" max="${maxN+1}" width="16" customWidth="1"/>`;
+  return xSheet(xRows(cells),cols,0)}
 function xlsxBlob(){
   const ss=sessions();const used=new Set();
   const names=ss.map(r=>{let n=((r.day||"").replace(/-/g,"")+(r.title||"")).replace(/[\\\/\?\*\[\]:]/g," ").slice(0,28)||"Sheet";let x=n,i=2;while(used.has(x))x=n.slice(0,26)+"_"+i++;used.add(x);return x});
@@ -311,7 +315,7 @@ function xlsxBlob(){
     ["_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
     ["xl/workbook.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${[...names,"まとめ"].map((n,i)=>`<sheet name="${xe(n)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`],
     ["xl/_rels/workbook.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${[...ss,0].map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}<Relationship Id="rId${ss.length+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
-    ["xl/styles.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="0.000"/><numFmt numFmtId="165" formatCode="0.0"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Meiryo UI"/></font><font><b/><sz val="11"/><name val="Meiryo UI"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFCCFFFF"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="13"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/><xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment wrapText="1" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="165" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="20" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`]];
+    ["xl/styles.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="0.000"/><numFmt numFmtId="165" formatCode="0.0"/><numFmt numFmtId="166" formatCode="h:mm"/></numFmts><fonts count="5"><font><sz val="11"/><name val="Meiryo UI"/></font><font><b/><sz val="11"/><name val="Meiryo UI"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Meiryo UI"/></font><font><b/><sz val="14"/><name val="Meiryo UI"/></font><font><sz val="10"/><color rgb="FF5E6773"/><name val="Meiryo UI"/></font></fonts><fills count="11"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${COLS.map(c=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${c[2].slice(1).toUpperCase()}"/><bgColor indexed="64"/></patternFill></fill>`).join("")}<fill><patternFill patternType="solid"><fgColor rgb="FFF2F4F7"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE2E9FB"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFC9CFD6"/></left><right style="thin"><color rgb="FFC9CFD6"/></right><top style="thin"><color rgb="FFC9CFD6"/></top><bottom style="thin"><color rgb="FFC9CFD6"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${20+1}"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="9" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="2" fontId="1" fillId="10" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="1" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="166" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>${COLS.map((c,k)=>`<xf numFmtId="0" fontId="${c[3]==="#fff"?2:1}" fillId="${2+k}" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>`).join("")}<xf numFmtId="0" fontId="1" fillId="9" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`]];
   ss.forEach((r,i)=>files.push([`xl/worksheets/sheet${i+1}.xml`,sheetXml(r)]));files.push([`xl/worksheets/sheet${ss.length+1}.xml`,sumXml(ss,names)]);
   return zip(files);
 }
