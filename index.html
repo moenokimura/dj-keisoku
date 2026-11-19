@@ -15,7 +15,7 @@
 :root{--bg:#F1F3F6;--s:#fff;--sunk:#E7EAEF;--ink:#14181D;--mu:#5E6773;--line:#D6DBE1;--ac:#1D4ED8;--ac2:#E2E9FB;--ng:#C93030;--nav:#0F1E3A;
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;color:var(--ink);background:var(--bg);-webkit-text-size-adjust:100%}
 @media(prefers-color-scheme:dark){:root{--bg:#0E1114;--s:#181C21;--sunk:#22272E;--ink:#E7EBEF;--mu:#98A2AD;--line:#2D333A;--ac:#7FA0FF;--ac2:#1F2A45;--ng:#F06464}}
-*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px)}
+*{box-sizing:border-box}html,body{touch-action:manipulation}body{margin:0;padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px)}
 button,input,select{font:inherit;color:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 input,select{background:var(--s);border:1px solid var(--line);border-radius:8px;height:42px;padding:0 10px;font-size:16px;width:100%;min-width:0}
 .top{background:var(--nav);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
@@ -169,7 +169,7 @@ function listView(){
 function setupView(){
   const d=S.setup.d,isNew=!S.setup.id;
   const f=(k,l,ph="",type="text")=>`<div class="f"><label>${l}</label><input type="${type}" data-s="${k}" value="${h(d[k]||"")}" placeholder="${ph}"></div>`;
-  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input class="nm" data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><select data-s="tires.${i}.col" aria-label="グラフの色" style="width:auto">${COLS.map((c,k)=>`<option value="${c[0]}" ${(t.col||COLS[i%COLS.length][0])===c[0]?"selected":""}>${c[1]}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
+  const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input class="nm" data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><input data-s="tires.${i}.who" value="${h(t.who||"")}" placeholder="担当(例: もえの)" aria-label="担当" style="flex:1 1 30%;min-width:0"><select data-s="tires.${i}.col" aria-label="グラフの色" style="width:auto">${COLS.map((c,k)=>`<option value="${c[0]}" ${(t.col||COLS[i%COLS.length][0])===c[0]?"selected":""}>${c[1]}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
   const mr=d.ms.map((m,i)=>`<div class="row"><input data-s="ms.${i}.name" value="${h(m.name)}" placeholder="例: 20-0km / ACC / LAP TIME" aria-label="測定項目"><select data-s="ms.${i}.unit" aria-label="単位">${UNITS.map(o=>`<option value="${o}" ${m.unit===o?"selected":""}>${o||"単位なし"}</option>`).join("")}</select>${d.ms.length>1?`<button class="ib" data-a="mDel" data-i="${i}" aria-label="消す">✕</button>`:""}</div>`).join("");
   return top(isNew?"シートを追加":"シートの設定",`<button class="ib" data-a="setupCancel">‹</button>`)+`<div class="w">
   <section class="pn"><div class="two">${f("day","日付","","date")}${f("title","シート名","例: AM 参加者試乗")}</div>
@@ -205,25 +205,27 @@ function roomView(){
   if(!ss.length)return head+`<div class="w">${share}<p class="hint">${h([D.venue,md(D.day)].filter(Boolean).join(" ・ "))}</p><section class="pn"><h2>まずシートをつくる</h2><p class="hint" style="margin-bottom:10px">Excelのシート1枚分(例: 0827 AM 参加者試乗)。タイヤの銘柄と測定項目を入れるよ。</p><button class="pr" style="width:100%" data-a="sesNew">＋ シートを追加</button></section></div>`;
   const r=ses(S.sid)||ss[ss.length-1];S.sid=r.id;
   const ms=r.ms||[],tires=r.tires||[];if(S.mi>=ms.length)S.mi=0;const m=ms[S.mi];
-  if(!S.ti||!tires.some(t=>t.id===S.ti)){const sv=ls("kk.t."+r.id);S.ti=tires.some(t=>t.id===sv)?sv:null}
+  const isMe=x=>!!x.who&&!!S.name&&x.who.replace(/\s/g,"")===S.name.replace(/\s/g,"");
+  if(!S.ti||!tires.some(t=>t.id===S.ti)){const sv=ls("kk.t."+r.id);const mine=tires.find(isMe);S.ti=tires.some(t=>t.id===sv)?sv:mine?mine.id:null}
   const t=tires.find(x=>x.id===S.ti);const unit=m&&m.unit||"";const c=r.cond||{};
   const sTabs=`<div class="tabs" role="group" aria-label="シート">${ss.map(x=>`<button data-a="ses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${x.done?"✓ ":""}${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}<button data-a="sesNew" aria-pressed="false">＋</button></div>`;
   const ci=(k,ph)=>`<input data-c="${k}" inputmode="text" value="${h(c[k]??"")}" placeholder="${ph}" aria-label="${ph}">`;
   const mTabs=ms.length>1?`<div class="tabs" role="group" aria-label="測定項目">${ms.map((x,i)=>`<button data-a="m" data-i="${i}" aria-pressed="${i===S.mi}">${h(x.name||"測定"+(i+1))}</button>`).join("")}</div>`:"";
   const chips=tires.map(x=>{const n=m?vals(r,m,x).filter(v=>v!==undefined).length:0;const who=(r.w||{})[m?key(m,x):""]||"";
-    return `<button class="chip ${x.id===S.ti?"on":""}" data-a="t" data-id="${x.id}"><b>${h(x.lab||"?")}</b><span>${h(x.name||"未入力")}</span><small>${n}回${who?" ・ "+h(who):""}</small></button>`}).join("");
+    const cc=tcol(x,tires.indexOf(x));return `<button class="chip ${x.id===S.ti?"on":""}" data-a="t" data-id="${x.id}" style="border-left:8px solid ${cc[2]}"><b>${h(x.lab||"?")}</b><span>${h(x.name||"未入力")}</span><small>${x.who?`担当 ${h(x.who)}${isMe(x)?"（あなた）":""} ・ `:""}${n}回</small></button>`}).join("");
   let ent="";
   if(r.done){const d=new Date(r.done.at);ent=`<div class="share" style="background:#E3F5E8;align-items:center;text-align:center"><b style="font-size:17px;color:#1D6B35">✅ このシートは終了しました</b><span class="hint" style="color:#2f5d3c">${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${pad(d.getMinutes())} ${h(r.done.by||"")} ・ 数字は確定。入力・修正はできません</span><button class="gh" data-a="reopen" style="min-height:36px;font-size:13px">入力を再開する</button></div>`}
   else if(!t)ent=`<p class="pick">↑ 自分が入力するタイヤを選んでね</p>`;
+  else if(t.who&&!isMe(t)){const cc=tcol(t,tires.indexOf(t));ent=`<div class="ent" style="border:3px solid ${cc[2]};text-align:center"><div style="background:${cc[2]};color:${cc[3]};margin:-12px -12px 0;padding:12px 14px;border-radius:12px 12px 0 0;text-align:left"><b style="font-size:20px">${h(t.lab||"")} ${h(t.name||"")}</b><div style="font-size:13px;font-weight:700;margin-top:2px;opacity:.9">担当：${h(t.who)}</div></div><b style="font-size:17px;margin-top:6px">🔒 ${h(t.who)}さんの担当です</b><span class="hint">このタイヤに入力できるのは ${h(t.who)}さんだけ。記録を見ることはできるよ。<br>代わりに入力するときは、シートの「設定」で担当を変えてね。</span></div>`}
   else{const a=full(r,m,t);let nx=1;while(a[nx-1]!==undefined)nx++;const p=S.edit||nx;
-    ent=`<div class="ent"><div class="now"><span>${h(t.lab||"")} ${h(t.name||"")}${ms.length>1?" ・ "+h(m.name):""}</span><b>${plab(r,p)}${S.edit?" を直す":""}</b></div>
+    ent=`${(()=>{const cc=tcol(t,tires.indexOf(t));return `<div class="ent" style="border:3px solid ${cc[2]}"><div style="background:${cc[2]};color:${cc[3]};margin:-12px -12px 0;padding:12px 14px;border-radius:12px 12px 0 0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-size:20px">${h(t.lab||"")} ${h(t.name||"")}</b><b style="font-size:16px;white-space:nowrap">${plab(r,p)}${S.edit?" を直す":""}</b></div><div style="font-size:13px;font-weight:700;margin-top:2px;opacity:.9">${t.who?`担当：${h(t.who)}`:"担当：未設定"}${ms.length>1?" ・ "+h(m.name):""}</div></div>`})()}
     <div class="disp ${S.buf?"":"ph"}" aria-live="polite">${S.buf?h(S.buf):"0.00"}<small>${h(unit)}</small></div>
     <div class="keys">${["7","8","9","4","5","6","1","2","3",".","0","⌫"].map(k=>`<button data-a="k" data-k="${k}" aria-label="${k==="⌫"?"1文字消す":k}">${k}</button>`).join("")}</div>
     <div class="acts">${S.edit?`<button class="gh" data-a="editCancel">やめる</button><button class="dg" data-a="passDel">消す</button>`:""}<button class="gh" data-a="miss" style="min-height:62px;flex:0 0 auto;font-size:13px;line-height:1.3">計測<br>できず</button><button class="pr go" data-a="go" ${S.buf&&isFinite(+S.buf)?"":"disabled"}>${S.edit?"直す":"記録"}</button></div></div>`}
   const fin=!r.done&&S.canFinish!==false?`<button class="gh" data-a="finish" style="width:100%;min-height:48px;border-color:#1D6B35;color:#1D6B35;font-weight:700">■ ${h(r.title||"このシート")}を終了して保存</button>`:"";
   let mine="";
   if(t&&m){const a=full(r,m,t),st=stats(vals(r,m,t));const done=a.filter(v=>v!==undefined).length,miss=a.filter(v=>v==="x").length;
-    mine=`<section class="pn"><h2><span>${h(t.lab||"")} の記録</span>${r.done?"":`<small class="hint">タップで直せる</small>`}</h2>
+    mine=`<section class="pn"><h2><span>${h(t.lab||"")} の記録</span>${r.done||(t.who&&!isMe(t))?"":`<small class="hint">タップで直せる</small>`}</h2>
     <div class="st"><div><span>Avg.${unit?`(${h(unit==="秒"?"sec":unit)})`:""}</span><b>${rf(st.avg)}</b></div><div><span>Stdev</span><b>${rf(st.sd,3)}</b></div>${r.ppl?`<div><span>入力済み${miss?` (×${miss})`:""}</span><b>${done}/${r.ppl*(r.laps||1)}</b></div>`:`<div><span>Avg.</span><b>${st.trim!==null?rf(st.trim):st.f7<7?`あと${7-st.f7}回`:"—"}</b></div>`}</div>
     <div class="ps">${a.map((v,i)=>v===undefined?"":`<button class="${S.edit===i+1?"on":""}" data-a="edit" data-p="${i+1}"><small>${plab(r,i+1,1)}</small><b style="${v==="x"?"color:var(--ng)":""}">${v==="x"?"×":rf(v)}</b></button>`).join("")||`<p class="empty" style="grid-column:1/-1;padding:4px">まだありません</p>`}</div></section>`}
   let sum="";
@@ -356,7 +358,7 @@ document.addEventListener("click",async ev=>{
   if(a==="mDel"){readSetup();S.setup.d.ms.splice(+b.dataset.i,1);rr();return}
   if(a==="setupSave"){readSetup();const d=S.setup.d;d.tires=d.tires.filter(t=>(t.lab||"").trim()||(t.name||"").trim());d.ms=d.ms.filter(m=>(m.name||"").trim()||m.unit);
     if(!d.day){toast("日付を入れてね");return}if(!d.tires.length){toast("タイヤを1本以上入れてね");return}if(!d.ms.length)d.ms=[{id:rid("m"),name:"20-0km",unit:"m"}];
-    const body={ppl:Math.max(0,parseInt(d.ppl)||0),laps:Math.max(1,parseInt(d.laps)||1),day:d.day,title:d.title.trim(),car:d.car.trim(),size:d.size.trim(),air:d.air.trim(),note:d.note.trim(),tires:d.tires.map((t,i)=>({id:t.id,lab:t.lab.trim(),name:t.name.trim(),role:t.role||"",col:t.col||COLS[i%COLS.length][0]})),ms:d.ms.map(m=>({id:m.id,name:m.name.trim(),unit:m.unit||""}))};
+    const body={ppl:Math.max(0,parseInt(d.ppl)||0),laps:Math.max(1,parseInt(d.laps)||1),day:d.day,title:d.title.trim(),car:d.car.trim(),size:d.size.trim(),air:d.air.trim(),note:d.note.trim(),tires:d.tires.map((t,i)=>({id:t.id,lab:t.lab.trim(),name:t.name.trim(),role:t.role||"",col:t.col||COLS[i%COLS.length][0],who:(t.who||"").trim()})),ms:d.ms.map(m=>({id:m.id,name:m.name.trim(),unit:m.unit||""}))};
     const sid=S.setup.id;
     if(sid){const u={};for(const[k,v]of Object.entries(body))u[`s.${sid}.${k}`]=v;S.setup=null;S.force=true;await upd(u);toast("保存しました");return}
     const nid=rid("s");S.setup=null;S.sid=nid;ls("kk.sid."+S.room,nid);S.ti=null;S.mi=0;S.justMade=false;S.force=true;
@@ -364,7 +366,7 @@ document.addEventListener("click",async ev=>{
   if(a==="sesDel"){const sid=S.setup&&S.setup.id;if(!sid)return;if(!confirm("このシートを削除しますか？入力した数字も消えます"))return;S.setup=null;S.sid=null;S.force=true;await upd({[`s.${sid}`]:null});toast("削除しました");return}
   if(a==="m"){S.mi=+b.dataset.i;S.buf="";S.edit=null;rr();return}
   if(a==="t"){S.ti=b.dataset.id;S.buf="";S.edit=null;ls("kk.t."+S.sid,S.ti);rr();return}
-  if(["k","go","miss","edit","passDel"].includes(a)){const rr0=ses(S.sid);if(rr0&&rr0.done){toast("終了したシートです。直すときは「入力を再開する」を押してね");return}}
+  if(["k","go","miss","edit","passDel"].includes(a)){const rr0=ses(S.sid);if(rr0&&rr0.done){toast("終了したシートです。直すときは「入力を再開する」を押してね");return}const tl=rr0&&(rr0.tires||[]).find(x=>x.id===S.ti);if(tl&&tl.who&&S.name&&tl.who.replace(/\s/g,"")!==S.name.replace(/\s/g,"")){toast(`🔒 ${tl.who}さんの担当なので入力できません`);return}}
   if(a==="finish"){const r=ses(S.sid);if(!r)return;if(!confirm(`「${r.title||"このシート"}」を終了しますか？\n終了すると入力・修正ができなくなります(あとで再開もできます)`))return;
     const d=new Date();const u={[`s.${r.id}.done`]:{at:d.toISOString(),by:S.name}};if(!(r.cond&&r.cond.t2))u[`s.${r.id}.cond.t2`]=d.getHours()+":"+pad(d.getMinutes());S.buf="";S.edit=null;S.force=true;await upd(u);window.scrollTo(0,0);toast("終了して保存しました");return}
   if(a==="reopen"){const r=ses(S.sid);if(!r)return;if(!confirm("入力を再開しますか？"))return;S.force=true;await upd({[`s.${r.id}.done`]:null});toast("再開しました");return}
@@ -389,6 +391,7 @@ document.addEventListener("click",async ev=>{
     try{await navigator.clipboard.writeText(txt);toast("コピーしました。ExcelのPass1の欄に貼ってね")}catch(e){S.tsv=txt;rr()}return}
   if(a==="tsvClose"){S.tsv=null;rr();return}
 });
+document.addEventListener("touchstart",ev=>{const b=ev.target.closest&&ev.target.closest('[data-a="k"],[data-a="go"],[data-a="miss"]');if(!b||b.disabled)return;ev.preventDefault();b.click()},{passive:false});
 function route(){const id=(location.hash||"").slice(1);if(id&&/^[a-z0-9]{8,20}$/.test(id)){if(id!==S.room)openRoom(id)}else{if(S.unsub)S.unsub();S.unsub=null;S.room=null;S.data=null;S.view="list";rr()}}
 window.addEventListener("hashchange",route);route();
 </script>
