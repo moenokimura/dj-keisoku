@@ -15,7 +15,7 @@
 :root{--bg:#F1F3F6;--s:#fff;--sunk:#E7EAEF;--ink:#14181D;--mu:#5E6773;--line:#D6DBE1;--ac:#1D4ED8;--ac2:#E2E9FB;--ng:#C93030;--nav:#0F1E3A;
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;color:var(--ink);background:var(--bg);-webkit-text-size-adjust:100%}
 @media(prefers-color-scheme:dark){:root{--bg:#0E1114;--s:#181C21;--sunk:#22272E;--ink:#E7EBEF;--mu:#98A2AD;--line:#2D333A;--ac:#7FA0FF;--ac2:#1F2A45;--ng:#F06464}}
-*{box-sizing:border-box}html,body{touch-action:manipulation}body{margin:0;padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px)}
+*{box-sizing:border-box}input.need{background:#FFF3A3!important;border:2px solid #E0B400!important}html,body{touch-action:manipulation}body{margin:0;padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px)}
 button,input,select{font:inherit;color:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 input,select{background:var(--s);border:1px solid var(--line);border-radius:8px;height:42px;padding:0 10px;font-size:16px;width:100%;min-width:0}
 .top{background:var(--nav);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
@@ -103,7 +103,8 @@ function stats(a){const x=a.filter(v=>v!==undefined);const n=x.length;if(!n)retu
   const avg=x.reduce((s,v)=>s+v,0)/n;const sd=n>1?Math.sqrt(x.reduce((s,v)=>s+(v-avg)**2,0)/(n-1)):null;
   const f7=[];for(let i=0;i<7;i++)if(a[i]!==undefined)f7.push(a[i]);
   const trim=f7.length===7?(f7.reduce((s,v)=>s+v,0)-Math.max(...f7)-Math.min(...f7))/5:null;return{n,avg,sd,trim,f7:f7.length}}
-const plab=(r,p,short)=>{const n=+r.ppl||0,l=+r.laps||1;if(!n)return short?"P"+p:"Pass "+p;const who=Math.ceil(p/l),lap=(p-1)%l+1;return short?`${who}-${lap}`:`${who}人目 ${lap}周目`};
+const isP=r=>(+r.ppl>0)||(+r.laps>1);
+const plab=(r,p,short)=>{const n=+r.ppl||0,l=+r.laps||1;if(!n&&l<2)return short?"P"+p:"Pass "+p;const who=Math.ceil(p/l),lap=(p-1)%l+1;return short?`${who}-${lap}`:`${who}人目 ${lap}周目`};
 const COLS=[["y","黄","#F2E21B","#111"],["r","赤","#E8343A","#fff"],["b","青","#2A9BE0","#fff"],["g","緑","#2FB35A","#fff"],["o","オレンジ","#F28C1B","#111"],["p","紫","#8A4FD8","#fff"],["k","グレー","#9AA3AD","#111"]];
 const tcol=(t,i)=>COLS.find(c=>c[0]===t.col)||COLS[i%COLS.length];
 const rf=(v,d=2)=>v===null||v===undefined||!isFinite(v)?"—":(+v).toFixed(d);
@@ -168,7 +169,7 @@ function listView(){
 }
 function setupView(){
   const d=S.setup.d,isNew=!S.setup.id;
-  const f=(k,l,ph="",type="text")=>`<div class="f"><label>${l}</label><input type="${type}" data-s="${k}" value="${h(d[k]||"")}" placeholder="${ph}"></div>`;
+  const f=(k,l,ph="",type="text")=>`<div class="f"><label>${l}</label><input type="${type}" data-s="${k}" value="${h(d[k]||"")}" placeholder="${ph}" class="${(k==="ppl"||k==="air")&&!String(d[k]||"").trim()?"need":""}"></div>`;
   const tr=d.tires.map((t,i)=>`<div class="row"><input class="lab" data-s="tires.${i}.lab" value="${h(t.lab)}" placeholder="A" aria-label="記号"><input class="nm" data-s="tires.${i}.name" value="${h(t.name)}" placeholder="例: DL WM ICE Pro" aria-label="タイヤ名"><select data-s="tires.${i}.role" aria-label="区分">${["基準","比較",""].map(o=>`<option value="${o}" ${t.role===o?"selected":""}>${o||"—"}</option>`).join("")}</select><input data-s="tires.${i}.who" value="${h(t.who||"")}" placeholder="担当(例: もえの)" aria-label="担当" style="flex:1 1 30%;min-width:0"><select data-s="tires.${i}.col" aria-label="グラフの色" style="width:auto">${COLS.map((c,k)=>`<option value="${c[0]}" ${(t.col||COLS[i%COLS.length][0])===c[0]?"selected":""}>${c[1]}</option>`).join("")}</select><button class="ib" data-a="tDel" data-i="${i}" aria-label="消す">✕</button></div>`).join("");
   const mr=d.ms.map((m,i)=>`<div class="row"><input data-s="ms.${i}.name" value="${h(m.name)}" placeholder="例: 20-0km / ACC / LAP TIME" aria-label="測定項目"><select data-s="ms.${i}.unit" aria-label="単位">${UNITS.map(o=>`<option value="${o}" ${m.unit===o?"selected":""}>${o||"単位なし"}</option>`).join("")}</select>${d.ms.length>1?`<button class="ib" data-a="mDel" data-i="${i}" aria-label="消す">✕</button>`:""}</div>`).join("");
   return top(isNew?"シートを追加":"シートの設定",`<button class="ib" data-a="setupCancel">‹</button>`)+`<div class="w">
@@ -193,7 +194,7 @@ function graphView(){const ss=sessions();const r=ses(S.sid)||ss[ss.length-1];if(
   return `<div style="min-height:100vh;background:var(--s);display:flex;flex-direction:column">
   <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)"><button class="ib" data-a="graphClose">‹ もどる</button><div class="tabs" style="flex:1">${ss.map(x=>`<button data-a="gses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}</div></div>
   <div style="flex:1;padding:clamp(16px,4vw,48px);display:flex;flex-direction:column;gap:clamp(16px,3vh,36px);justify-content:center">
-  <h2 style="margin:0;text-align:center;font-size:clamp(18px,3vw,34px)">${h(m.name||"")} 比較${r.ppl?`（ドライバー：参加者${(()=>{const n=Math.ceil(maxPass(r,m)/(+r.laps||1));return n?n+"人":""})()}）`:""}<span style="font-weight:400;color:var(--mu);font-size:.6em;margin-left:10px">${h(S.data.venue||"")} ${h(md(r.day))} ${h(r.title||"")}${m.unit?` ・ Avg.(${h(m.unit==="秒"?"sec":m.unit)})`:""}</span></h2>
+  <h2 style="margin:0;text-align:center;font-size:clamp(18px,3vw,34px)">${h(m.name||"")} 比較${isP(r)?`（ドライバー：参加者${(()=>{const n=Math.ceil(maxPass(r,m)/(+r.laps||1));return n?n+"人":""})()}）`:""}<span style="font-weight:400;color:var(--mu);font-size:.6em;margin-left:10px">${h(S.data.venue||"")} ${h(md(r.day))} ${h(r.title||"")}${m.unit?` ・ Avg.(${h(m.unit==="秒"?"sec":m.unit)})`:""}</span></h2>
   ${chart(r,true)}</div></div>`}
 function matome(ss){if(ss.length<1)return"";
   const blocks=ss.map(r=>{const m=(r.ms||[])[0];if(!m)return"";return `<div style="margin-bottom:12px"><b style="font-size:13px">${h(md(r.day))} ${h(r.title||"")}</b><div class="tb"><table><tbody>${(r.tires||[]).map(t=>{const st=stats(vals(r,m,t));return `<tr><th style="width:auto;font-size:12px;color:var(--ink)">${h(t.lab||"")} ${h(t.name||"")}</th><td style="width:70px;font-weight:700">${rf(st.avg)}</td><td style="width:56px;color:var(--mu);font-size:11px">${st.n}回</td></tr>`}).join("")}</tbody></table></div></div>`}).join("");
@@ -209,7 +210,7 @@ function roomView(){
   if(!S.ti||!tires.some(t=>t.id===S.ti)){const sv=ls("kk.t."+r.id);const mine=tires.find(isMe);S.ti=tires.some(t=>t.id===sv)?sv:mine?mine.id:null}
   const t=tires.find(x=>x.id===S.ti);const unit=m&&m.unit||"";const c=r.cond||{};
   const sTabs=`<div class="tabs" role="group" aria-label="シート">${ss.map(x=>`<button data-a="ses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${x.done?"✓ ":""}${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}<button data-a="sesNew" aria-pressed="false">＋</button></div>`;
-  const ci=(k,ph)=>`<input data-c="${k}" inputmode="text" value="${h(c[k]??"")}" placeholder="${ph}" aria-label="${ph}">`;
+  const NEED=["ice1","ice2","air1","air2","t1"];const ci=(k,ph)=>`<input data-c="${k}" inputmode="text" value="${h(c[k]??"")}" placeholder="${ph}" aria-label="${ph}" class="${!r.done&&NEED.includes(k)&&!String(c[k]??"").trim()?"need":""}">`;
   const mTabs=ms.length>1?`<div class="tabs" role="group" aria-label="測定項目">${ms.map((x,i)=>`<button data-a="m" data-i="${i}" aria-pressed="${i===S.mi}">${h(x.name||"測定"+(i+1))}</button>`).join("")}</div>`:"";
   const chips=tires.map(x=>{const n=m?vals(r,m,x).filter(v=>v!==undefined).length:0;const who=(r.w||{})[m?key(m,x):""]||"";
     const cc=tcol(x,tires.indexOf(x));return `<button class="chip ${x.id===S.ti?"on":""}" data-a="t" data-id="${x.id}" style="border-left:8px solid ${cc[2]}"><b>${h(x.lab||"?")}</b><span>${h(x.name||"未入力")}</span><small>${x.who?`担当 ${h(x.who)}${isMe(x)?"（あなた）":""} ・ `:""}${n}回</small></button>`}).join("");
@@ -226,22 +227,23 @@ function roomView(){
   let mine="";
   if(t&&m){const a=full(r,m,t),st=stats(vals(r,m,t));const done=a.filter(v=>v!==undefined).length,miss=a.filter(v=>v==="x").length;
     mine=`<section class="pn"><h2><span>${h(t.lab||"")} の記録</span>${r.done||(t.who&&!isMe(t))?"":`<small class="hint">タップで直せる</small>`}</h2>
-    <div class="st"><div><span>Avg.${unit?`(${h(unit==="秒"?"sec":unit)})`:""}</span><b>${rf(st.avg)}</b></div><div><span>Stdev</span><b>${rf(st.sd,3)}</b></div>${r.ppl?`<div><span>入力済み${miss?` (×${miss})`:""}</span><b>${done}/${r.ppl*(r.laps||1)}</b></div>`:`<div><span>Avg.</span><b>${st.trim!==null?rf(st.trim):st.f7<7?`あと${7-st.f7}回`:"—"}</b></div>`}</div>
+    <div class="st"><div><span>Avg.${unit?`(${h(unit==="秒"?"sec":unit)})`:""}</span><b>${rf(st.avg)}</b></div><div><span>Stdev</span><b>${rf(st.sd,3)}</b></div>${isP(r)?`<div><span>入力済み${miss?` (×${miss})`:""}</span><b>${done}${+r.ppl?`/${r.ppl*(r.laps||1)}`:"回"}</b></div>`:`<div><span>Avg.</span><b>${st.trim!==null?rf(st.trim):st.f7<7?`あと${7-st.f7}回`:"—"}</b></div>`}</div>
     <div class="ps">${a.map((v,i)=>v===undefined?"":`<button class="${S.edit===i+1?"on":""}" data-a="edit" data-p="${i+1}"><small>${plab(r,i+1,1)}</small><b style="${v==="x"?"color:var(--ng)":""}">${v==="x"?"×":rf(v)}</b></button>`).join("")||`<p class="empty" style="grid-column:1/-1;padding:4px">まだありません</p>`}</div></section>`}
   let sum="";
   if(m){const sts=tires.map(x=>stats(vals(r,m,x)));const mp=maxPass(r,m);
     const hd=`<tr><th></th>${tires.map(x=>`<th class="${x.id===S.ti?"me":""}"><b>${h(x.lab||"")}</b><small>${h(x.name||"")}</small></th>`).join("")}</tr>`;
-    const rows=[[`Avg.${unit?`(${h(unit==="秒"?"sec":unit)})`:""}`,s=>rf(s.avg)],["Stdev",s=>rf(s.sd,3)],...(r.ppl?[]:[["Avg.",s=>s.trim!==null?rf(s.trim):"—"]]),["回数",s=>s.n||"0"]].map(([l,fn])=>`<tr class="sr"><th>${l}</th>${sts.map((s,i)=>`<td class="${tires[i].id===S.ti?"me":""}">${fn(s)}</td>`).join("")}</tr>`).join("");
+    const rows=[[`Avg.${unit?`(${h(unit==="秒"?"sec":unit)})`:""}`,s=>rf(s.avg)],["Stdev",s=>rf(s.sd,3)],...(isP(r)?[]:[["Avg.",s=>s.trim!==null?rf(s.trim):"—"]]),["回数",s=>s.n||"0"]].map(([l,fn])=>`<tr class="sr"><th>${l}</th>${sts.map((s,i)=>`<td class="${tires[i].id===S.ti?"me":""}">${fn(s)}</td>`).join("")}</tr>`).join("");
     let g="";if(S.grid){const vs=tires.map(x=>full(r,m,x));for(let p=1;p<=mp;p++)g+=`<tr><th>${plab(r,p,1)}</th>${vs.map((a,i)=>`<td class="${tires[i].id===S.ti?"me":""}">${a[p-1]==="x"?"×":a[p-1]!==undefined?rf(a[p-1]):""}</td>`).join("")}</tr>`}
     sum=`<section class="pn"><h2><span>全体${unit?`(${h(unit)})`:""}</span><button class="ib" data-a="grid">${S.grid?"たたむ":"全部見る"}</button></h2><div class="tb"><table><thead>${hd}</thead><tbody>${rows}${g}</tbody></table></div>
-    ${r.ppl?"":`<p class="hint" style="margin-top:8px">Avg.＝Pass1〜7のうち最大と最小を除いた5回の平均</p>`}</section>`}
+    ${isP(r)?"":`<p class="hint" style="margin-top:8px">Avg.＝Pass1〜7のうち最大と最小を除いた5回の平均</p>`}</section>`}
   const info=[r.car,r.size,r.air&&"空気圧 "+r.air,r.note].filter(Boolean).map(h).join(" ・ ");
   return head+`<div class="w">${S.showShare?share||`<div class="share"><b style="font-size:14px">このURLを入力する人に送ってね</b><code>${h(roomUrl(S.room))}</code><div class="two"><button class="line" data-a="line">LINEで送る</button><button class="gh" data-a="copyUrl">URLをコピー</button></div></div>`:share}
   ${sTabs}
   <div style="display:flex;gap:8px;align-items:center"><p class="hint" style="flex:1">${h(D.venue||"")}${info?" ・ "+info:""}</p><button class="ib" data-a="sesEdit">設定</button></div>
   <section class="pn"><div class="cond"><span></span><span style="text-align:center">START</span><span style="text-align:center">FINISH</span>
     <span>氷温</span>${ci("ice1","℃")}${ci("ice2","℃")}<span>外気温</span>${ci("air1","℃")}${ci("air2","℃")}
-    <span>時刻</span><span class="tm">${ci("t1","9:20")}<button class="ib" data-a="nowT" data-k="t1">今</button></span><span class="tm">${ci("t2","11:20")}<button class="ib" data-a="nowT" data-k="t2">今</button></span></div></section>
+    <span>時刻</span><span class="tm">${ci("t1","9:20")}<button class="ib" data-a="nowT" data-k="t1">今</button></span><span class="tm">${ci("t2","11:20")}<button class="ib" data-a="nowT" data-k="t2">今</button></span></div>
+  <div class="two" style="margin-top:10px"><div class="f" style="margin:0"><label>参加者の人数</label><input data-p="ppl" inputmode="numeric" value="${+r.ppl||""}" placeholder="例: 21" class="${!r.done&&!(+r.ppl)?"need":""}"></div><div class="f" style="margin:0"><label>空気圧</label><input data-p="air" value="${h(r.air||"")}" placeholder="例: 230/220kPa" class="${!r.done&&!String(r.air||"").trim()?"need":""}"></div></div>${!r.done&&(NEED.some(k=>!String(c[k]??"").trim())||!(+r.ppl)||!String(r.air||"").trim())?`<p class="hint" style="margin-top:8px;color:#8a6d00">黄色の欄はまだ入っていないところ。入れると白に戻るよ</p>`:""}</section>
   ${mTabs}<button class="pr" data-a="graph" style="background:var(--nav)">📊 グラフで映す</button><div class="chips">${chips}</div>${ent}${mine}${sum}${fin}${matome(ss)}
   <div class="foot"><button class="gh" data-a="tsv">数字をコピー</button><button class="pr" data-a="xlsx">Excelで書き出す(全シート)</button></div>
   ${S.tsv?`<section class="pn"><h2>コピーできなかったので、長押しでコピーしてね<button class="ib" data-a="tsvClose">閉じる</button></h2><textarea readonly>${h(S.tsv)}</textarea></section>`:""}
@@ -271,7 +273,7 @@ function sheetXml(r){
   const num=v=>{if(v===""||v==null)return "";const x=String(v).replace(",",".").replace("−","-");return isFinite(+x)?+x:v};
   const tm=v=>{const m=/^(\d{1,2}):(\d{2})$/.exec(String(v||"").trim());return m?(+m[1]*60+ +m[2])/1440:(v||"")};
   put(1,0,`${md(r.day)}  ${S.data.venue||""}  ${r.title||""}`,XS.title);cells.__h[1]=26;
-  const info=[r.car,r.size,r.air&&"空気圧 "+r.air,r.ppl?`参加者 ${Math.ceil(Math.max(0,...ms.map(m=>maxPass(r,m)))/(+r.laps||1))||r.ppl}人 × ${r.laps||1}周`:"",r.note].filter(Boolean).join("  /  ");
+  const info=[r.car,r.size,r.air&&"空気圧 "+r.air,isP(r)?`参加者 ${Math.ceil(Math.max(0,...ms.map(m=>maxPass(r,m)))/(+r.laps||1))||r.ppl}人 × ${r.laps||1}周`:"",r.note].filter(Boolean).join("  /  ");
   put(2,0,info,XS.gray);
   put(4,0,"",XS.ch);put(4,1,"START",XS.ch);put(4,2,"FINISH",XS.ch);
   put(5,0,"氷温(℃)",XS.lab);put(5,1,num(c.ice1),XS.cond);put(5,2,num(c.ice2),XS.cond);
@@ -283,8 +285,8 @@ function sheetXml(r){
     tires.forEach((t,i)=>{const k=COLS.indexOf(tcol(t,i));put(hdr,1+i,[t.lab,t.name].filter(Boolean).join(" "),XS.hd+(k<0?0:k))});
     let rr=hdr+1;const hasRole=tires.some(t=>t.role);
     if(hasRole){put(rr,0,"",XS.lab);tires.forEach((t,i)=>put(rr,1+i,t.role||"",XS.txt));rr++}
-    const avR=rr,sdR=rr+1,trR=r.ppl?null:rr+2,cnR=r.ppl?rr+2:rr+3;const p1=cnR+2;
-    const mp=Math.max(maxPass(r,m),r.ppl?r.ppl*(r.laps||1):10);
+    const avR=rr,sdR=rr+1,trR=isP(r)?null:rr+2,cnR=isP(r)?rr+2:rr+3;const p1=cnR+2;
+    const mp=Math.max(maxPass(r,m),isP(r)?(+r.ppl||0)*(r.laps||1):10);
     put(avR,0,"Avg.",XS.lab);put(sdR,0,"Stdev",XS.lab);if(trR)put(trR,0,"5本平均",XS.lab);put(cnR,0,"回数",XS.lab);
     tires.forEach((t,i)=>{const col=1+i,L=colL(col),a=full(r,m,t),st=stats(vals(r,m,t));const rg=`${L}${p1}:${L}${p1+mp-1}`,r7=`${L}${p1}:${L}${p1+6}`;
       put(avR,col,st.n?+st.avg.toFixed(6):"",XS.avg,`IFERROR(AVERAGE(${rg}),"")`);
@@ -302,7 +304,7 @@ function sumXml(ss,names){const cells={__h:{}};const put=(ro,co,v,s,f)=>{cells[r
   put(1,0,`${S.data.title||""}  タイヤごとのAvg.`,XS.title);cells.__h[1]=26;put(2,0,S.data.venue||"",XS.gray);
   let row=4,maxN=1;
   ss.forEach((r,k)=>{const m=(r.ms||[])[0];if(!m)return;const ts=r.tires||[];maxN=Math.max(maxN,ts.length);const q="'"+names[k].replace(/'/g,"''")+"'";
-    const hasRole=ts.some(t=>t.role);const avR=9+1+(hasRole?1:0);const cnR=avR+(r.ppl?2:3);
+    const hasRole=ts.some(t=>t.role);const avR=9+1+(hasRole?1:0);const cnR=avR+(isP(r)?2:3);
     put(row,0,`${md(r.day)} ${r.title||""}${r.done?" ✓":""}`,XS.b);row++;
     put(row,0,(m.name||"")+(m.unit?` (${m.unit})`:""),XS.lab);cells.__h[row]=44;
     ts.forEach((t,i)=>{const kk=COLS.indexOf(tcol(t,i));put(row,1+i,[t.lab,t.name].filter(Boolean).join(" "),XS.hd+(kk<0?0:kk))});row++;
@@ -331,8 +333,8 @@ window.__kk={S,xlsxBlob,sessions};
 
 /* ---------- events ---------- */
 function readSetup(){if(!S.setup)return;document.querySelectorAll("[data-s]").forEach(el=>{const ks=el.dataset.s.split(".");let o=S.setup.d;for(let i=0;i<ks.length-1;i++)o=o[ks[i]];o[ks[ks.length-1]]=el.value})}
-document.addEventListener("input",e=>{const el=e.target;if(el.dataset.s)readSetup();if(el.dataset.k){S.mk=S.mk||{title:"",venue:"",day:todayS()};S.mk[el.dataset.k]=el.value}});
-document.addEventListener("change",e=>{const el=e.target;if(el.dataset.c&&S.sid)upd({[`s.${S.sid}.cond.${el.dataset.c}`]:el.value.trim()})});
+document.addEventListener("input",e=>{const el=e.target;if((el.dataset.c||el.dataset.p||el.dataset.s==="ppl"||el.dataset.s==="air")&&el.classList)el.classList.toggle("need",!el.value.trim()&&el.classList.contains("need"));if(el.dataset.s)readSetup();if(el.dataset.k){S.mk=S.mk||{title:"",venue:"",day:todayS()};S.mk[el.dataset.k]=el.value}});
+document.addEventListener("change",e=>{const el=e.target;if(el.dataset.p&&S.sid){const v=el.value.trim();upd({[`s.${S.sid}.${el.dataset.p}`]:el.dataset.p==="ppl"?(parseInt(v.replace(/[^0-9]/g,""))||0):v});return}if(el.dataset.c&&S.sid)upd({[`s.${S.sid}.cond.${el.dataset.c}`]:el.value.trim()})});
 document.addEventListener("focusout",()=>{if(S.defer)setTimeout(()=>{const a=document.activeElement;if(!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))){S.defer=false;render()}},60)});
 const rr=()=>{S.force=true;render()};
 document.addEventListener("click",async ev=>{
