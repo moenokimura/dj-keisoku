@@ -210,7 +210,7 @@ function roomView(){
   if(!S.ti||!tires.some(t=>t.id===S.ti)){const sv=ls("kk.t."+r.id);const mine=tires.find(isMe);S.ti=tires.some(t=>t.id===sv)?sv:mine?mine.id:null}
   const t=tires.find(x=>x.id===S.ti);const unit=m&&m.unit||"";const c=r.cond||{};
   const sTabs=`<div class="tabs" role="group" aria-label="シート">${ss.map(x=>`<button data-a="ses" data-id="${x.id}" aria-pressed="${x.id===r.id}">${x.done?"✓ ":""}${h(md(x.day))} ${h(x.title||"")}</button>`).join("")}<button data-a="sesNew" aria-pressed="false">＋</button></div>`;
-  const NEED=["ice1","ice2","air1","air2","t1"];const ci=(k,ph)=>`<input data-c="${k}" inputmode="text" value="${h(c[k]??"")}" placeholder="${ph}" aria-label="${ph}" class="${!r.done&&NEED.includes(k)&&!String(c[k]??"").trim()?"need":""}">`;
+  const NEED=["ice1","ice2","air1","air2","t1","t2"];const ci=(k,ph)=>`<input data-c="${k}" inputmode="text" value="${h(c[k]??"")}" placeholder="${ph}" aria-label="${ph}" class="${!r.done&&NEED.includes(k)&&!String(c[k]??"").trim()?"need":""}">`;
   const mTabs=ms.length>1?`<div class="tabs" role="group" aria-label="測定項目">${ms.map((x,i)=>`<button data-a="m" data-i="${i}" aria-pressed="${i===S.mi}">${h(x.name||"測定"+(i+1))}</button>`).join("")}</div>`:"";
   const chips=tires.map(x=>{const n=m?vals(r,m,x).filter(v=>v!==undefined).length:0;const who=(r.w||{})[m?key(m,x):""]||"";
     const cc=tcol(x,tires.indexOf(x));return `<button class="chip ${x.id===S.ti?"on":""}" data-a="t" data-id="${x.id}" style="border-left:8px solid ${cc[2]}"><b>${h(x.lab||"?")}</b><span>${h(x.name||"未入力")}</span><small>${x.who?`担当 ${h(x.who)}${isMe(x)?"（あなた）":""} ・ `:""}${n}回</small></button>`}).join("");
